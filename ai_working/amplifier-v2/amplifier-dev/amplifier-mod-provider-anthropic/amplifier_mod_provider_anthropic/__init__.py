@@ -1,0 +1,203 @@
+"""
+Anthropic provider module for Amplifier.
+Integrates with Anthropic's Claude API.
+"""
+import os
+import logging
+from typing import Dict, Any, List, Optional
+from anthropic import AsyncAnthropic
+
+from amplifier_core import (
+    ModuleCoordinator,
+    ProviderResponse,
+    ToolCall
+)
+
+logger = logging.getLogger(__name__)
+
+
+async def mount(coordinator: ModuleCoordinator, config: Optional[Dict[str, Any]] = None):
+    """
+    Mount the Anthropic provider.
+    
+    Args:
+        coordinator: Module coordinator
+        config: Provider configuration including API key
+        
+    Returns:
+        Optional cleanup function
+    """
+    config = config or {}
+    
+    # Get API key from config or environment
+    api_key = config.get('api_key')
+    if not api_key:
+        api_key = os.environ.get('ANTHROPIC_API_KEY')
+    
+    if not api_key:
+        logger.warning("No API key found for Anthropic provider")
+        return None
+    
+    provider = AnthropicProvider(api_key, config)
+    await coordinator.mount('providers', provider, name='anthropic')
+    logger.info("Mounted AnthropicProvider")
+    
+    # Return cleanup function
+    async def cleanup():
+        if hasattr(provider.client, 'close'):
+            await provider.client.close()
+    
+    return cleanup
+
+
+class AnthropicProvider:
+    """Anthropic API integration."""
+    
+    name = "anthropic"
+    
+    def __init__(self, api_key: str, config: Dict[str, Any] = None):
+        """
+        Initialize Anthropic provider.
+        
+        Args:
+            api_key: Anthropic API key
+            config: Additional configuration
+        """
+        self.client = AsyncAnthropic(api_key=api_key)
+        self.config = config or {}
+        self.default_model = config.get('default_model', 'claude-3-5-sonnet-20241022')
+        self.max_tokens = config.get('max_tokens', 4096)
+        self.temperature = config.get('temperature', 0.7)
+        
+    async def complete(
+        self,
+        messages: List[Dict[str, Any]],
+        **kwargs
+    ) -> ProviderResponse:
+        """
+        Generate completion from messages.
+        
+        Args:
+            messages: Conversation history
+            **kwargs: Additional parameters
+            
+        Returns:
+            Provider response
+        """
+        # Convert messages to Anthropic format
+        anthropic_messages = self._convert_messages(messages)
+        
+        # Extract system message if present
+        system = None
+        for msg in messages:
+            if msg.get('role') == 'system':
+                system = msg.get('content', '')
+                break
+        
+        # Prepare request parameters
+        params = {
+            'model': kwargs.get('model', self.default_model),
+            'messages': anthropic_messages,
+            'max_tokens': kwargs.get('max_tokens', self.max_tokens),
+            'temperature': kwargs.get('temperature', self.temperature)
+        }
+        
+        if system:
+            params['system'] = system
+        
+        # Add tools if provided
+        if 'tools' in kwargs:
+            params['tools'] = self._convert_tools(kwargs['tools'])
+        
+        try:
+            response = await self.client.messages.create(**params)
+            
+            # Convert response to standard format
+            content = ""
+            tool_calls = []
+            
+            for block in response.content:
+                if block.type == 'text':
+                    content = block.text
+                elif block.type == 'tool_use':
+                    tool_calls.append(ToolCall(
+                        tool=block.name,
+                        arguments=block.input,
+                        id=block.id
+                    ))
+            
+            return ProviderResponse(
+                content=content,
+                raw=response,
+                usage={
+                    'input': response.usage.input_tokens,
+                    'output': response.usage.output_tokens
+                },
+                tool_calls=tool_calls if tool_calls else None
+            )
+            
+        except Exception as e:
+            logger.error(f"Anthropic API error: {e}")
+            raise
+    
+    def parse_tool_calls(self, response: ProviderResponse) -> List[ToolCall]:
+        """
+        Parse tool calls from provider response.
+        
+        Args:
+            response: Provider response
+            
+        Returns:
+            List of tool calls
+        """
+        return response.tool_calls or []
+    
+    def _convert_messages(self, messages: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Convert messages to Anthropic format."""
+        anthropic_messages = []
+        
+        for msg in messages:
+            role = msg.get('role')
+            content = msg.get('content', '')
+            
+            # Skip system messages (handled separately)
+            if role == 'system':
+                continue
+            
+            # Convert role names
+            if role == 'tool':
+                # Tool results in Anthropic format
+                anthropic_messages.append({
+                    'role': 'user',
+                    'content': [{
+                        'type': 'tool_result',
+                        'tool_use_id': msg.get('tool_call_id', 'unknown'),
+                        'content': content
+                    }]
+                })
+            else:
+                # Regular messages
+                anthropic_role = 'assistant' if role == 'assistant' else 'user'
+                anthropic_messages.append({
+                    'role': anthropic_role,
+                    'content': content
+                })
+        
+        return anthropic_messages
+    
+    def _convert_tools(self, tools: List[Any]) -> List[Dict[str, Any]]:
+        """Convert tools to Anthropic format."""
+        anthropic_tools = []
+        
+        for tool in tools:
+            anthropic_tools.append({
+                'name': tool.name,
+                'description': tool.description,
+                'input_schema': {
+                    'type': 'object',
+                    'properties': {},  # Would need tool schema here
+                    'required': []
+                }
+            })
+        
+        return anthropic_tools
