@@ -14,91 +14,39 @@ compact_threshold = 0.92
 [[providers]]
 module = "provider-anthropic"
 name = "anthropic"
-config = { 
-    api_key = "${ANTHROPIC_API_KEY}",
-    default_model = "claude-3-5-sonnet-20241022",
-    max_tokens = 4096,
-    temperature = 0.7
-}
+config = { api_key = "${ANTHROPIC_API_KEY}", default_model = "claude-3-5-sonnet-20241022", max_tokens = 4096, temperature = 0.7 }
 
 # Fallback provider - OpenAI
 [[providers]]
 module = "provider-openai"
 name = "openai"
-config = {
-    api_key = "${OPENAI_API_KEY}",
-    default_model = "gpt-4-turbo-preview",
-    max_tokens = 4096,
-    temperature = 0.7
-}
+config = { api_key = "${OPENAI_API_KEY}", default_model = "gpt-4-turbo-preview", max_tokens = 4096, temperature = 0.7 }
 
 # Filesystem tools with safety restrictions
 [[tools]]
 module = "tool-filesystem"
-config = {
-    allowed_paths = [".", "/tmp/amplifier"],
-    require_approval = false
-}
+config = { allowed_paths = [".", "/tmp/amplifier"], require_approval = false }
 
 # Bash tool with strict safety
 [[tools]]
 module = "tool-bash"
-config = {
-    require_approval = true,
-    timeout = 30,
-    working_dir = ".",
-    denied_commands = [
-        "rm -rf /",
-        "sudo",
-        "dd if=/dev/zero",
-        "mkfs",
-        "passwd"
-    ],
-    allowed_commands = [
-        "ls*",
-        "cat*",
-        "grep*",
-        "find*",
-        "echo*",
-        "pwd",
-        "date",
-        "whoami"
-    ]
-}
+config = { require_approval = true, timeout = 30, working_dir = ".", denied_commands = ["rm -rf /", "sudo", "dd if=/dev/zero", "mkfs", "passwd"], allowed_commands = ["ls*", "cat*", "grep*", "find*", "echo*", "pwd", "date", "whoami"] }
 
 # Web tools with domain restrictions
 [[tools]]
 module = "tool-web"
-config = {
-    timeout = 10,
-    max_size = 1048576,
-    blocked_domains = [
-        "localhost",
-        "127.0.0.1",
-        "192.168.",
-        "10.",
-        "172.16."
-    ],
-    extract_text = true
-}
+config = { timeout = 10, max_size = 1048576, blocked_domains = ["localhost", "127.0.0.1", "192.168.", "10.", "172.16."], extract_text = true }
 
 # Transcript backup hook
 [[hooks]]
 module = "hooks-backup"
-config = {
-    backup_dir = ".amplifier/transcripts",
-    format = "jsonl",
-    include_metadata = true
-}
+config = { backup_dir = ".amplifier/transcripts", format = "jsonl", include_metadata = true }
 
 # Specialized agents
 [[agents]]
 module = "agent-architect"
 name = "architect"
-config = {
-    preferred_model = "claude-3-opus-20240229",
-    temperature = 0.7
-}
+config = { preferred_model = "claude-3-opus-20240229", temperature = 0.7 }
 
 # Logging configuration
 [logging]
