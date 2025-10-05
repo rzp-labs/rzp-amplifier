@@ -1,0 +1,31 @@
+# Amplifier development configuration
+# This config loads minimal modules for testing
+
+[session]
+orchestrator = "loop-basic"
+context = "context-simple"
+
+[context.config]
+max_tokens = 200_000
+compact_threshold = 0.92
+
+# Mock provider for testing without API calls
+[[providers]]
+module = "provider-mock"
+name = "mock"
+config = { responses = [
+    "I'll help you with that.",
+    "Processing your request...",
+    "Task completed successfully."
+]}
+
+# Basic filesystem tools
+[[tools]]
+module = "tool-filesystem"
+config = { allowed_paths = ["."], require_approval = false }
+
+# Add more modules as needed
+# [[providers]]
+# module = "provider-anthropic"
+# name = "anthropic"
+# config = { api_key = "${ANTHROPIC_API_KEY}" }
