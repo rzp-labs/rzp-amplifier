@@ -27,9 +27,6 @@ dev = [
     "ruff>=0.1",
 ]
 
-[project.scripts]
-amplifier = "amplifier_core.cli:main"
-
 [project.urls]
 Homepage = "https://github.com/microsoft/amplifier-core"
 Documentation = "https://amplifier.readthedocs.io"

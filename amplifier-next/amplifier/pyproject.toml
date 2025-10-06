@@ -1,0 +1,62 @@
+[tool.poetry]
+name = "amplifier"
+version = "0.1.0"
+description = "Amplifier - AI-powered modular development platform"
+authors = ["Microsoft"]
+readme = "README.md"
+license = "MIT"
+repository = "https://github.com/microsoft/amplifier"
+documentation = "https://github.com/microsoft/amplifier/blob/main/README.md"
+keywords = ["ai", "development", "modular", "assistant", "coding"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: End Users/Desktop",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Software Development :: Code Generators",
+]
+
+[tool.poetry.scripts]
+amplifier = "amplifier_cli.main:main"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+# Core and CLI
+amplifier-core = { git = "https://github.com/microsoft/amplifier-core.git", branch = "main" }
+amplifier-cli = { git = "https://github.com/microsoft/amplifier-cli.git", branch = "main" }
+
+# Default module set - the reference implementations
+amplifier-mod-loop-basic = { git = "https://github.com/microsoft/amplifier-mod-loop-basic.git", branch = "main", optional = true }
+amplifier-mod-context-simple = { git = "https://github.com/microsoft/amplifier-mod-context-simple.git", branch = "main", optional = true }
+amplifier-mod-provider-anthropic = { git = "https://github.com/microsoft/amplifier-mod-provider-anthropic.git", branch = "main", optional = true }
+amplifier-mod-provider-openai = { git = "https://github.com/microsoft/amplifier-mod-provider-openai.git", branch = "main", optional = true }
+amplifier-mod-tool-filesystem = { git = "https://github.com/microsoft/amplifier-mod-tool-filesystem.git", branch = "main", optional = true }
+amplifier-mod-tool-bash = { git = "https://github.com/microsoft/amplifier-mod-tool-bash.git", branch = "main", optional = true }
+
+[tool.poetry.extras]
+# Module bundles for different use cases
+default = [
+    "amplifier-mod-loop-basic",
+    "amplifier-mod-context-simple",
+    "amplifier-mod-tool-filesystem",
+    "amplifier-mod-tool-bash"
+]
+anthropic = [
+    "amplifier-mod-provider-anthropic"
+]
+openai = [
+    "amplifier-mod-provider-openai"
+]
+all = [
+    "amplifier-mod-loop-basic",
+    "amplifier-mod-context-simple", 
+    "amplifier-mod-provider-anthropic",
+    "amplifier-mod-provider-openai",
+    "amplifier-mod-tool-filesystem",
+    "amplifier-mod-tool-bash"
+]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
