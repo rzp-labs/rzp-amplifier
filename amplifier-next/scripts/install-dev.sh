@@ -7,6 +7,10 @@ echo "Installing Amplifier development environment..."
 echo "Installing amplifier-core..."
 pip install -e ./amplifier-core
 
+# Install CLI in editable mode
+echo "Installing amplifier-cli..."
+pip install -e ./amplifier-cli
+
 # Install all modules in editable mode
 for module in amplifier-mod-*; do
     if [ -d "$module" ]; then

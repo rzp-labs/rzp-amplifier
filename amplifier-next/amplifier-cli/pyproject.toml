@@ -20,7 +20,7 @@ amplifier = "amplifier_cli.main:main"
 
 [tool.poetry.dependencies]
 python = "^3.11"
-amplifier-core = "^0.1.0"
+amplifier-core = "^1.0.0"
 click = "^8.1.0"
 rich = "^13.0.0"
 toml = "^0.10.2"

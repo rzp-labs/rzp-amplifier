@@ -14,8 +14,6 @@ from rich.syntax import Syntax
 from rich.table import Table
 
 from amplifier_core import AmplifierSession, ModuleCoordinator
-from amplifier_core.interfaces import ModuleType
-from amplifier_core.models import SessionConfig
 
 console = Console()
 
@@ -62,21 +60,18 @@ def run(
     if model:
         config_data.setdefault("provider", {})["model"] = model
 
-    # Create session config
-    session_config = SessionConfig(**config_data)
-
     if mode == "chat":
-        asyncio.run(interactive_chat(session_config, verbose))
+        asyncio.run(interactive_chat(config_data, verbose))
     else:
         if not prompt:
             console.print("[red]Error:[/red] Prompt required in single mode")
             sys.exit(1)
-        asyncio.run(execute_single(prompt, session_config, verbose))
+        asyncio.run(execute_single(prompt, config_data, verbose))
 
 
-async def interactive_chat(config: SessionConfig, verbose: bool):
+async def interactive_chat(config: dict, verbose: bool):
     """Run an interactive chat session."""
-    session = AmplifierSession(config)
+    session = AmplifierSession()
     await session.initialize()
 
     console.print(
@@ -110,9 +105,9 @@ async def interactive_chat(config: SessionConfig, verbose: bool):
         console.print("\n[yellow]Session ended[/yellow]")
 
 
-async def execute_single(prompt: str, config: SessionConfig, verbose: bool):
+async def execute_single(prompt: str, config: dict, verbose: bool):
     """Execute a single prompt and exit."""
-    session = AmplifierSession(config)
+    session = AmplifierSession()
 
     try:
         await session.initialize()
@@ -142,7 +137,7 @@ def module():
 @click.option(
     "--type",
     "-t",
-    type=click.Choice(["all", "orchestrator", "provider", "tool", "agent", "context", "hooks"]),
+    type=click.Choice(["all", "orchestrator", "provider", "tool", "agent", "context", "hook"]),
     default="all",
     help="Module type to list",
 )
@@ -150,26 +145,29 @@ def list_modules(type: str):
     """List installed modules."""
     coordinator = ModuleCoordinator()
 
-    # Discover modules
-    asyncio.run(coordinator.discover_modules())
-
+    # Get loaded modules from coordinator
     table = Table(title="Installed Modules", show_header=True, header_style="bold cyan")
     table.add_column("Name", style="green")
     table.add_column("Type", style="yellow")
-    table.add_column("Version")
+    table.add_column("Mount Point")
     table.add_column("Description")
 
-    for module_type in ModuleType:
-        if type != "all" and type != module_type.value:
+    # Module types we support
+    module_types = ["orchestrator", "provider", "tool", "agent", "context", "hook"]
+
+    for module_type in module_types:
+        if type != "all" and type != module_type:
             continue
 
-        modules = coordinator.get_modules(module_type)
-        for mod_name, mod_info in modules.items():
+        # Get modules of this type from coordinator
+        modules = getattr(coordinator, f"{module_type}s", {})
+        for mod_name, mod_instance in modules.items():
+            # Extract info from module instance if available
             table.add_row(
                 mod_name,
-                module_type.value,
-                mod_info.get("version", "unknown"),
-                mod_info.get("description", ""),
+                module_type,
+                mod_name,  # Mount point is typically the module name
+                getattr(mod_instance, "description", "N/A") if mod_instance else "N/A",
             )
 
     console.print(table)
@@ -180,14 +178,18 @@ def list_modules(type: str):
 def module_info(module_name: str):
     """Show detailed information about a module."""
     coordinator = ModuleCoordinator()
-    asyncio.run(coordinator.discover_modules())
+
+    # Module types to search
+    module_types = ["orchestrator", "provider", "tool", "agent", "context", "hook"]
 
     # Find module
     module = None
-    for module_type in ModuleType:
-        modules = coordinator.get_modules(module_type)
+    module_type_found = None
+    for module_type in module_types:
+        modules = getattr(coordinator, f"{module_type}s", {})
         if module_name in modules:
             module = modules[module_name]
+            module_type_found = module_type
             break
 
     if not module:
@@ -196,11 +198,9 @@ def module_info(module_name: str):
 
     # Display module info
     panel_content = f"""[bold]Name:[/bold] {module_name}
-[bold]Type:[/bold] {module.get("type", "unknown")}
-[bold]Version:[/bold] {module.get("version", "unknown")}
-[bold]Description:[/bold] {module.get("description", "N/A")}
-[bold]Author:[/bold] {module.get("author", "unknown")}
-[bold]Path:[/bold] {module.get("path", "N/A")}"""
+[bold]Type:[/bold] {module_type_found}
+[bold]Description:[/bold] {getattr(module, "description", "N/A") if module else "N/A"}
+[bold]Mount Point:[/bold] {module_name}"""
 
     console.print(Panel(panel_content, title=f"Module: {module_name}", border_style="cyan"))
 
