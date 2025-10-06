@@ -14,6 +14,7 @@ import aiohttp
 from amplifier_core import ModuleCoordinator
 from amplifier_core import ToolResult
 from bs4 import BeautifulSoup
+from ddgs import DDGS
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +47,15 @@ class WebSearchTool:
         self.api_key = config.get("api_key")
         self.max_results = config.get("max_results", 5)
 
+    @property
+    def input_schema(self) -> dict:
+        """Return JSON schema for tool parameters."""
+        return {
+            "type": "object",
+            "properties": {"query": {"type": "string", "description": "Search query to execute"}},
+            "required": ["query"],
+        }
+
     async def execute(self, input: dict[str, Any]) -> ToolResult:
         """Execute web search."""
         query = input.get("query")
@@ -53,15 +63,37 @@ class WebSearchTool:
             return ToolResult(success=False, error={"message": "Query is required"})
 
         try:
-            # Mock search results for now
-            # In production, integrate with real search API
-            results = await self._mock_search(query)
+            # Try real search first, fall back to mock if it fails
+            results = await self._real_search(query)
 
             return ToolResult(success=True, output={"query": query, "results": results, "count": len(results)})
 
         except Exception as e:
             logger.error(f"Search error: {e}")
             return ToolResult(success=False, error={"message": str(e)})
+
+    async def _real_search(self, query: str) -> list:
+        """Perform real web search using DuckDuckGo."""
+        try:
+            # Use sync DDGS in async context
+            def search_sync():
+                ddgs = DDGS()
+                results = []
+                for r in ddgs.text(query, max_results=self.max_results):
+                    results.append(
+                        {"title": r.get("title", ""), "url": r.get("href", ""), "snippet": r.get("body", "")}
+                    )
+                return results
+
+            # Run in thread pool to avoid blocking
+            loop = asyncio.get_event_loop()
+            results = await loop.run_in_executor(None, search_sync)
+            return results
+
+        except Exception as e:
+            logger.warning(f"DuckDuckGo search failed: {e}, falling back to mock")
+            # Fallback to mock on error
+            return await self._mock_search(query)
 
     async def _mock_search(self, query: str) -> list:
         """Mock search implementation."""
@@ -108,6 +140,15 @@ class WebFetchTool:
             ],
         )
         self.extract_text = config.get("extract_text", True)
+
+    @property
+    def input_schema(self) -> dict:
+        """Return JSON schema for tool parameters."""
+        return {
+            "type": "object",
+            "properties": {"url": {"type": "string", "description": "URL to fetch content from"}},
+            "required": ["url"],
+        }
 
     async def execute(self, input: dict[str, Any]) -> ToolResult:
         """Fetch content from URL."""

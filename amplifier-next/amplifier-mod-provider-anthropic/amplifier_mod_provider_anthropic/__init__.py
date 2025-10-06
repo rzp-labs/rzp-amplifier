@@ -180,15 +180,14 @@ class AnthropicProvider:
         anthropic_tools = []
 
         for tool in tools:
+            # Get schema from tool if available, otherwise use empty schema
+            input_schema = getattr(tool, "input_schema", {"type": "object", "properties": {}, "required": []})
+
             anthropic_tools.append(
                 {
                     "name": tool.name,
                     "description": tool.description,
-                    "input_schema": {
-                        "type": "object",
-                        "properties": {},  # Would need tool schema here
-                        "required": [],
-                    },
+                    "input_schema": input_schema,
                 }
             )
 

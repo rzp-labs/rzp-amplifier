@@ -57,6 +57,15 @@ class BashTool:
         self.timeout = config.get("timeout", 30)
         self.working_dir = config.get("working_dir", ".")
 
+    @property
+    def input_schema(self) -> dict:
+        """Return JSON schema for tool parameters."""
+        return {
+            "type": "object",
+            "properties": {"command": {"type": "string", "description": "Bash command to execute"}},
+            "required": ["command"],
+        }
+
     async def execute(self, input: dict[str, Any]) -> ToolResult:
         """
         Execute a bash command.

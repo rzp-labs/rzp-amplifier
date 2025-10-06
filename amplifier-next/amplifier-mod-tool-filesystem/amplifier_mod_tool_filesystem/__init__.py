@@ -41,6 +41,15 @@ class ReadTool:
         self.config = config
         self.allowed_paths = config.get("allowed_paths", ["."])
 
+    @property
+    def input_schema(self) -> dict:
+        """Return JSON schema for tool parameters."""
+        return {
+            "type": "object",
+            "properties": {"path": {"type": "string", "description": "Path to the file to read"}},
+            "required": ["path"],
+        }
+
     async def execute(self, input: dict[str, Any]) -> ToolResult:
         """Read a file."""
         path = input.get("path")
@@ -75,6 +84,18 @@ class WriteTool:
         self.config = config
         self.allowed_paths = config.get("allowed_paths", ["."])
         self.require_approval = config.get("require_approval", True)
+
+    @property
+    def input_schema(self) -> dict:
+        """Return JSON schema for tool parameters."""
+        return {
+            "type": "object",
+            "properties": {
+                "path": {"type": "string", "description": "Path to the file to write"},
+                "content": {"type": "string", "description": "Content to write to the file"},
+            },
+            "required": ["path", "content"],
+        }
 
     async def execute(self, input: dict[str, Any]) -> ToolResult:
         """Write to a file."""
@@ -114,6 +135,19 @@ class EditTool:
         self.config = config
         self.allowed_paths = config.get("allowed_paths", ["."])
         self.show_diff = config.get("show_diff", True)
+
+    @property
+    def input_schema(self) -> dict:
+        """Return JSON schema for tool parameters."""
+        return {
+            "type": "object",
+            "properties": {
+                "path": {"type": "string", "description": "Path to the file to edit"},
+                "old_text": {"type": "string", "description": "Text to replace (must be unique in file)"},
+                "new_text": {"type": "string", "description": "Text to replace old_text with"},
+            },
+            "required": ["path", "old_text", "new_text"],
+        }
 
     async def execute(self, input: dict[str, Any]) -> ToolResult:
         """Edit a file with replacements."""

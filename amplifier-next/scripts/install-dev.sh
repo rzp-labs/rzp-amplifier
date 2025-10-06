@@ -20,4 +20,11 @@ for module in amplifier-mod-*; do
 done
 
 echo "Installation complete!"
-echo "You can now run: amplifier chat"
+echo ""
+echo "Usage examples:"
+echo "  amplifier run --config test-full-features.toml --mode chat"
+echo "  amplifier run --config test-anthropic-config.toml --mode chat"
+echo ""
+echo "Commands available:"
+echo "  amplifier run --help    # Show all options"
+echo "  amplifier module list   # List installed modules"

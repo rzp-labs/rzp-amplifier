@@ -83,7 +83,8 @@ class BasicOrchestrator:
 
             # Get completion from provider
             try:
-                response = await provider.complete(messages)
+                # Pass tools to provider so LLM can use them
+                response = await provider.complete(messages, tools=list(tools.values()))
             except Exception as e:
                 logger.error(f"Provider error: {e}")
                 final_response = f"Error getting response: {e}"

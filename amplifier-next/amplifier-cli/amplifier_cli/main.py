@@ -3,8 +3,9 @@
 import asyncio
 import json
 import sys
+from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any, Dict, Optional, Tuple
 
 import click
 import toml
@@ -16,6 +17,218 @@ from rich.table import Table
 from amplifier_core import AmplifierSession, ModuleCoordinator
 
 console = Console()
+
+
+class CommandProcessor:
+    """Process slash commands and special directives."""
+
+    COMMANDS = {
+        "/think": {"action": "enable_plan_mode", "description": "Enable read-only planning mode"},
+        "/do": {
+            "action": "disable_plan_mode",
+            "description": "Exit plan mode and allow modifications",
+        },
+        "/stop": {"action": "halt_execution", "description": "Stop current execution"},
+        "/save": {"action": "save_transcript", "description": "Save conversation transcript"},
+        "/status": {"action": "show_status", "description": "Show session status"},
+        "/clear": {"action": "clear_context", "description": "Clear conversation context"},
+        "/help": {"action": "show_help", "description": "Show available commands"},
+        "/config": {"action": "show_config", "description": "Show current configuration"},
+        "/tools": {"action": "list_tools", "description": "List available tools"},
+    }
+
+    def __init__(self, session: AmplifierSession):
+        self.session = session
+        self.plan_mode = False
+        self.halted = False
+        self.plan_mode_unregister = None  # Store unregister function
+
+    def process_input(self, user_input: str) -> Tuple[str, Dict[str, Any]]:
+        """
+        Process user input and extract commands.
+
+        Returns:
+            (action, data) tuple
+        """
+        # Check for commands
+        if user_input.startswith("/"):
+            parts = user_input.split(maxsplit=1)
+            command = parts[0].lower()
+            args = parts[1] if len(parts) > 1 else ""
+
+            if command in self.COMMANDS:
+                cmd_info = self.COMMANDS[command]
+                return cmd_info["action"], {"args": args, "command": command}
+            else:
+                return "unknown_command", {"command": command}
+
+        # Regular prompt
+        return "prompt", {"text": user_input, "plan_mode": self.plan_mode}
+
+    async def handle_command(self, action: str, data: Dict[str, Any]) -> str:
+        """Handle a command action."""
+
+        if action == "enable_plan_mode":
+            self.plan_mode = True
+            self._configure_plan_mode(True)
+            return "✓ Plan Mode enabled - all modifications disabled"
+
+        elif action == "disable_plan_mode":
+            self.plan_mode = False
+            self._configure_plan_mode(False)
+            return "✓ Plan Mode disabled - modifications enabled"
+
+        elif action == "halt_execution":
+            self.halted = True
+            # Signal orchestrator to stop
+            if hasattr(self.session, "halt"):
+                await self.session.halt()
+            return "✓ Execution halted"
+
+        elif action == "save_transcript":
+            path = await self._save_transcript(data.get("args", ""))
+            return f"✓ Transcript saved to {path}"
+
+        elif action == "show_status":
+            status = await self._get_status()
+            return status
+
+        elif action == "clear_context":
+            await self._clear_context()
+            return "✓ Context cleared"
+
+        elif action == "show_help":
+            return self._format_help()
+
+        elif action == "show_config":
+            return await self._get_config_display()
+
+        elif action == "list_tools":
+            return await self._list_tools()
+
+        elif action == "unknown_command":
+            return f"Unknown command: {data['command']}. Use /help for available commands."
+
+        else:
+            return f"Unhandled action: {action}"
+
+    def _configure_plan_mode(self, enabled: bool):
+        """Configure session for plan mode."""
+        # Import HookResult here to avoid circular import
+        from amplifier_core.models import HookResult
+
+        # Access hooks via the coordinator
+        hooks = self.session.coordinator.get("hooks")
+        if hooks:
+            if enabled:
+                # Register plan mode hook that denies write operations
+                async def plan_mode_hook(event: str, data: Dict[str, Any]) -> HookResult:
+                    tool_name = data.get("tool")
+                    if tool_name in ["write", "edit", "bash", "task"]:
+                        return HookResult(
+                            action="deny",
+                            reason="Write operations disabled in Plan Mode",
+                        )
+                    return HookResult(action="continue")
+
+                # Register the hook with the hooks registry and store unregister function
+                if hasattr(hooks, "register"):
+                    self.plan_mode_unregister = hooks.register(
+                        "tool:pre", plan_mode_hook, priority=0, name="plan_mode"
+                    )
+            else:
+                # Unregister plan mode hook if we have the unregister function
+                if self.plan_mode_unregister:
+                    self.plan_mode_unregister()
+                    self.plan_mode_unregister = None
+
+    async def _save_transcript(self, filename: str) -> str:
+        """Save current transcript."""
+        # Default filename if not provided
+        if not filename:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"transcript_{timestamp}.json"
+
+        # Get messages from context
+        context = self.session.coordinator.get("context")
+        if context and hasattr(context, "get_messages"):
+            messages = await context.get_messages()
+
+            # Save to file
+            path = Path(".amplifier/transcripts") / filename
+            path.parent.mkdir(parents=True, exist_ok=True)
+
+            with open(path, "w") as f:
+                json.dump(
+                    {
+                        "timestamp": datetime.now().isoformat(),
+                        "messages": messages,
+                        "config": self.session.config,
+                    },
+                    f,
+                    indent=2,
+                )
+
+            return str(path)
+
+        return "No transcript available"
+
+    async def _get_status(self) -> str:
+        """Get session status information."""
+        lines = ["Session Status:"]
+
+        # Plan mode status
+        lines.append(f"  Plan Mode: {'ON' if self.plan_mode else 'OFF'}")
+
+        # Context size
+        context = self.session.coordinator.get("context")
+        if context and hasattr(context, "get_messages"):
+            messages = await context.get_messages()
+            lines.append(f"  Messages: {len(messages)}")
+
+        # Active providers
+        providers = self.session.coordinator.get("providers")
+        if providers:
+            provider_names = list(providers.keys())
+            lines.append(f"  Providers: {', '.join(provider_names)}")
+
+        # Available tools
+        tools = self.session.coordinator.get("tools")
+        if tools:
+            lines.append(f"  Tools: {len(tools)}")
+
+        return "\n".join(lines)
+
+    async def _clear_context(self):
+        """Clear the conversation context."""
+        context = self.session.coordinator.get("context")
+        if context and hasattr(context, "clear"):
+            await context.clear()
+
+    def _format_help(self) -> str:
+        """Format help text."""
+        lines = ["Available Commands:"]
+        for cmd, info in self.COMMANDS.items():
+            lines.append(f"  {cmd:<12} - {info['description']}")
+        return "\n".join(lines)
+
+    async def _get_config_display(self) -> str:
+        """Display current configuration."""
+        config_str = json.dumps(self.session.config, indent=2)
+        return f"Current Configuration:\n{config_str}"
+
+    async def _list_tools(self) -> str:
+        """List available tools."""
+        tools = self.session.coordinator.get("tools")
+        if not tools:
+            return "No tools available"
+
+        lines = ["Available Tools:"]
+        for name, tool in tools.items():
+            desc = getattr(tool, "description", "No description")
+            lines.append(f"  {name:<20} - {desc}")
+
+        return "\n".join(lines)
 
 
 @click.group()
@@ -185,10 +398,13 @@ async def interactive_chat(config: dict, verbose: bool):
     session = AmplifierSession(transformed_config)
     await session.initialize()
 
+    # Create command processor
+    command_processor = CommandProcessor(session)
+
     console.print(
         Panel.fit(
             "[bold cyan]Amplifier Interactive Session[/bold cyan]\n"
-            "Type 'exit' or press Ctrl+C to quit",
+            "Type '/help' for commands, 'exit' or press Ctrl+C to quit",
             border_style="cyan",
         )
     )
@@ -201,12 +417,26 @@ async def interactive_chat(config: dict, verbose: bool):
                     break
 
                 if prompt.strip():
-                    console.print("[dim]Processing...[/dim]")
-                    response = await session.execute(prompt)
-                    console.print("\n" + response)
+                    # Process input for commands
+                    action, data = command_processor.process_input(prompt)
+
+                    if action == "prompt":
+                        # Normal prompt execution
+                        console.print("[dim]Processing...[/dim]")
+                        response = await session.execute(data["text"])
+                        console.print("\n" + response)
+                    else:
+                        # Handle command
+                        result = await command_processor.handle_command(action, data)
+                        console.print(f"[cyan]{result}[/cyan]")
 
             except KeyboardInterrupt:
-                break
+                # Allow /stop command or Ctrl+C to interrupt execution
+                if command_processor.halted:
+                    command_processor.halted = False
+                    console.print("\n[yellow]Execution stopped[/yellow]")
+                else:
+                    break
             except Exception as e:
                 console.print(f"[red]Error:[/red] {e}")
                 if verbose:
@@ -275,16 +505,29 @@ def list_modules(type: str):
         if type != "all" and type != module_type:
             continue
 
-        # Get modules of this type from coordinator
-        modules = getattr(coordinator, f"{module_type}s", {})
-        for mod_name, mod_instance in modules.items():
-            # Extract info from module instance if available
-            table.add_row(
-                mod_name,
-                module_type,
-                mod_name,  # Mount point is typically the module name
-                getattr(mod_instance, "description", "N/A") if mod_instance else "N/A",
-            )
+        # Get modules of this type from coordinator using mount_point names
+        mount_point = module_type if module_type == "context" else f"{module_type}s"
+        modules = coordinator.get(mount_point) if hasattr(coordinator, "get") else {}
+
+        # Handle single vs multi module mount points
+        if module_type in ["orchestrator", "context"]:
+            # Single module mount points
+            if modules:
+                table.add_row(
+                    module_type,
+                    module_type,
+                    module_type,
+                    getattr(modules, "description", "N/A") if modules else "N/A",
+                )
+        elif isinstance(modules, dict):
+            # Multi-module mount points
+            for mod_name, mod_instance in modules.items():
+                table.add_row(
+                    mod_name,
+                    module_type,
+                    mod_name,
+                    getattr(mod_instance, "description", "N/A") if mod_instance else "N/A",
+                )
 
     console.print(table)
 
@@ -302,8 +545,16 @@ def module_info(module_name: str):
     module = None
     module_type_found = None
     for module_type in module_types:
-        modules = getattr(coordinator, f"{module_type}s", {})
-        if module_name in modules:
+        mount_point = module_type if module_type == "context" else f"{module_type}s"
+        modules = coordinator.get(mount_point) if hasattr(coordinator, "get") else {}
+
+        if module_type in ["orchestrator", "context"]:
+            # Single module mount points - check if this is the one
+            if modules and module_name == module_type:
+                module = modules
+                module_type_found = module_type
+                break
+        elif isinstance(modules, dict) and module_name in modules:
             module = modules[module_name]
             module_type_found = module_type
             break

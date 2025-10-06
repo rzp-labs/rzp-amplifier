@@ -1,0 +1,51 @@
+# Amplifier Full Features Test Configuration
+# Tests all newly implemented features for feature parity with Claude Code
+
+[provider]
+name = "anthropic"
+model = "claude-3-5-sonnet-20241022"
+
+[modules]
+orchestrator = "loop-basic"
+context = "context-persistent"  # Use persistent context instead of simple
+tools = [
+    "filesystem",    # Read, Write, Edit with diff
+    "bash",          # Command execution
+    "web",           # Web fetch and search (now with real DuckDuckGo)
+    "search",        # NEW: Grep, Glob, Find
+    "task"           # NEW: Sub-agent delegation
+]
+agents = [
+    "architect"      # Specialized agent (ready for task delegation)
+]
+
+[context]
+# NEW: Memory files loaded at session start
+memory_files = [
+    "./CLAUDE.md",
+    "./AGENTS.md"
+]
+max_tokens = 200000
+compact_threshold = 0.92
+
+[session]
+max_tokens = 100000
+auto_compact = true
+
+# [hooks]
+# enabled = []  # Hook system ready, no hooks currently installed
+
+# Tool-specific configurations
+[tools.bash]
+require_approval = true
+
+[tools.web]
+timeout = 10
+max_size = 1048576  # 1MB
+
+[tools.search]
+max_results = 100
+
+[tools.task]
+max_depth = 3
+inherit_tools = true
