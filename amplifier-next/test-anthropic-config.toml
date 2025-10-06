@@ -1,0 +1,22 @@
+# Test Configuration for Anthropic Provider
+[provider]
+name = "anthropic"
+model = "claude-sonnet-4-5"
+
+[modules]
+orchestrator = "loop-basic"
+context = "context-simple"
+
+tools = [
+    "filesystem",
+    "bash"
+]
+
+[session]
+max_tokens = 100000
+auto_compact = true
+compact_threshold = 0.9
+timeout = 3600
+
+[logging]
+level = "INFO"
