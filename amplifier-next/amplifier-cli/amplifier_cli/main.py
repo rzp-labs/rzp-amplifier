@@ -338,7 +338,14 @@ def transform_toml_to_session_config(toml_config: dict[str, Any]) -> dict[str, A
         if "tools" in toml_config["modules"]:
             tools = toml_config["modules"]["tools"]
             if isinstance(tools, list):
-                session_config["tools"] = [{"module": f"tool-{tool}"} for tool in tools]
+                tool_configs = []
+                for tool in tools:
+                    tool_module = {"module": f"tool-{tool}"}
+                    # Check for tool-specific config in [tools.X] sections
+                    if "tools" in toml_config and tool in toml_config["tools"]:
+                        tool_module["config"] = toml_config["tools"][tool]
+                    tool_configs.append(tool_module)
+                session_config["tools"] = tool_configs
 
         # Transform hooks from modules section
         if "hooks" in toml_config["modules"]:

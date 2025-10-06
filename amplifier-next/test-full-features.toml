@@ -39,6 +39,7 @@ auto_compact = true
 # Tool-specific configurations
 [tools.bash]
 require_approval = true
+auto_approve = true  # Auto-approve for testing/development
 
 [tools.web]
 timeout = 10
