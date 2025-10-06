@@ -4,7 +4,7 @@ import asyncio
 import json
 import sys
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 import click
 import toml
@@ -28,7 +28,7 @@ def cli():
 @cli.command()
 @click.argument("prompt", required=False)
 @click.option("--config", "-c", type=click.Path(exists=True), help="Configuration file path")
-@click.option("--provider", "-p", default="mock", help="LLM provider to use")
+@click.option("--provider", "-p", default=None, help="LLM provider to use")
 @click.option("--model", "-m", help="Model to use (provider-specific)")
 @click.option(
     "--mode", type=click.Choice(["chat", "single"]), default="single", help="Execution mode"
@@ -69,9 +69,120 @@ def run(
         asyncio.run(execute_single(prompt, config_data, verbose))
 
 
+def transform_toml_to_session_config(toml_config: dict[str, Any]) -> dict[str, Any]:
+    """
+    Transform TOML config format to AmplifierSession expected format.
+
+    TOML format:
+        [provider]
+        name = "anthropic"
+        model = "claude-sonnet-4-5"
+
+        [modules]
+        orchestrator = "loop-basic"
+        context = "context-simple"
+        tools = ["filesystem", "bash"]
+
+    AmplifierSession format:
+        {
+            "session": {
+                "orchestrator": "loop-basic",
+                "context": "context-simple"
+            },
+            "providers": [
+                {
+                    "module": "provider-anthropic",
+                    "config": {"model": "claude-sonnet-4-5"}
+                }
+            ],
+            "tools": [
+                {"module": "tool-filesystem"},
+                {"module": "tool-bash"}
+            ]
+        }
+    """
+    # Start with default structure
+    session_config = {
+        "session": {
+            "orchestrator": "loop-basic",
+            "context": "context-simple",
+        },
+        "context": {"config": {"max_tokens": 200_000, "compact_threshold": 0.92}},
+        "providers": [],
+        "tools": [],
+        "agents": [],
+        "hooks": [],
+    }
+
+    # Transform orchestrator and context from modules section
+    if "modules" in toml_config:
+        if "orchestrator" in toml_config["modules"]:
+            session_config["session"]["orchestrator"] = toml_config["modules"]["orchestrator"]
+        if "context" in toml_config["modules"]:
+            session_config["session"]["context"] = toml_config["modules"]["context"]
+
+        # Transform tools list
+        if "tools" in toml_config["modules"]:
+            tools = toml_config["modules"]["tools"]
+            if isinstance(tools, list):
+                session_config["tools"] = [{"module": f"tool-{tool}"} for tool in tools]
+
+    # Transform provider configuration
+    if "provider" in toml_config:
+        provider = toml_config["provider"]
+        provider_name = provider.get("name", "mock")
+
+        # Build provider config
+        provider_config: dict[str, Any] = {"module": f"provider-{provider_name}"}
+
+        # Add provider-specific config
+        config_dict: dict[str, Any] = {}
+        if "model" in provider:
+            config_dict["model"] = provider["model"]
+
+        # Add any other provider settings
+        extra_config = {k: v for k, v in provider.items() if k not in ["name", "model"]}
+        if extra_config:
+            config_dict.update(extra_config)
+
+        if config_dict:
+            provider_config["config"] = config_dict
+
+        session_config["providers"] = [provider_config]
+
+    # Copy session settings if present
+    if "session" in toml_config:
+        # Context config specifically
+        if "max_tokens" in toml_config["session"]:
+            session_config["context"]["config"]["max_tokens"] = toml_config["session"]["max_tokens"]
+        if "compact_threshold" in toml_config["session"]:
+            session_config["context"]["config"]["compact_threshold"] = toml_config["session"][
+                "compact_threshold"
+            ]
+        if "auto_compact" in toml_config["session"]:
+            session_config["context"]["config"]["auto_compact"] = toml_config["session"][
+                "auto_compact"
+            ]
+
+    # Transform agents if present
+    if "agents" in toml_config:
+        agents = toml_config["agents"]
+        if isinstance(agents, list):
+            session_config["agents"] = [{"module": f"agent-{agent}"} for agent in agents]
+
+    # Transform hooks if present
+    if "hooks" in toml_config:
+        hooks = toml_config["hooks"]
+        if "enabled" in hooks and isinstance(hooks["enabled"], list):
+            session_config["hooks"] = [{"module": f"hook-{hook}"} for hook in hooks["enabled"]]
+
+    return session_config
+
+
 async def interactive_chat(config: dict, verbose: bool):
     """Run an interactive chat session."""
-    session = AmplifierSession()
+    transformed_config = transform_toml_to_session_config(config)
+    session = AmplifierSession(transformed_config)
     await session.initialize()
 
     console.print(
@@ -107,7 +218,8 @@ async def interactive_chat(config: dict, verbose: bool):
 
 async def execute_single(prompt: str, config: dict, verbose: bool):
     """Execute a single prompt and exit."""
-    session = AmplifierSession()
+    transformed_config = transform_toml_to_session_config(config)
+    session = AmplifierSession(transformed_config)
 
     try:
         await session.initialize()
@@ -116,6 +228,10 @@ async def execute_single(prompt: str, config: dict, verbose: bool):
             console.print(f"[dim]Executing: {prompt}[/dim]")
 
         response = await session.execute(prompt)
+        if verbose:
+            console.print(
+                f"[dim]Response type: {type(response)}, length: {len(response) if response else 0}[/dim]"
+            )
         console.print(response)
 
     except Exception as e:
