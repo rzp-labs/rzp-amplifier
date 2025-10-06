@@ -7,7 +7,7 @@ model = "claude-3-5-sonnet-20241022"
 
 [modules]
 orchestrator = "loop-basic"
-context = "context-persistent"  # Use persistent context instead of simple
+context = "context-simple"  # Use simple context for testing
 tools = [
     "filesystem",    # Read, Write, Edit with diff
     "bash",          # Command execution
@@ -19,8 +19,12 @@ agents = [
     "architect"      # Specialized agent (ready for task delegation)
 ]
 
+# Hook modules configuration - at top level
+hooks = [
+    {module = "hooks-logging", config = {level = "INFO", output = "console", file = "amplifier.log"}}
+]
+
 [context]
-# NEW: Memory files loaded at session start
 memory_files = [
     "./CLAUDE.md",
     "./AGENTS.md"
@@ -31,9 +35,6 @@ compact_threshold = 0.92
 [session]
 max_tokens = 100000
 auto_compact = true
-
-# [hooks]
-# enabled = []  # Hook system ready, no hooks currently installed
 
 # Tool-specific configurations
 [tools.bash]

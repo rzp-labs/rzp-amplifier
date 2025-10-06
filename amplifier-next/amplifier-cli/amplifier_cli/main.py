@@ -340,6 +340,12 @@ def transform_toml_to_session_config(toml_config: dict[str, Any]) -> dict[str, A
             if isinstance(tools, list):
                 session_config["tools"] = [{"module": f"tool-{tool}"} for tool in tools]
 
+        # Transform hooks from modules section
+        if "hooks" in toml_config["modules"]:
+            hooks = toml_config["modules"]["hooks"]
+            if isinstance(hooks, list):
+                session_config["hooks"] = hooks
+
     # Transform provider configuration
     if "provider" in toml_config:
         provider = toml_config["provider"]
@@ -362,6 +368,12 @@ def transform_toml_to_session_config(toml_config: dict[str, Any]) -> dict[str, A
             provider_config["config"] = config_dict
 
         session_config["providers"] = [provider_config]
+
+    # Transform hooks from top level (preferred location)
+    if "hooks" in toml_config:
+        hooks = toml_config["hooks"]
+        if isinstance(hooks, list):
+            session_config["hooks"] = hooks
 
     # Copy session settings if present
     if "session" in toml_config:
@@ -386,8 +398,12 @@ def transform_toml_to_session_config(toml_config: dict[str, Any]) -> dict[str, A
     # Transform hooks if present
     if "hooks" in toml_config:
         hooks = toml_config["hooks"]
-        if "enabled" in hooks and isinstance(hooks["enabled"], list):
-            session_config["hooks"] = [{"module": f"hook-{hook}"} for hook in hooks["enabled"]]
+        # Handle direct array format: hooks = [{module = "hooks-logging", config = {...}}]
+        if isinstance(hooks, list):
+            session_config["hooks"] = hooks
+        # Handle nested format: hooks = {enabled = ["backup", "logging"]}
+        elif "enabled" in hooks and isinstance(hooks["enabled"], list):
+            session_config["hooks"] = [{"module": f"hooks-{hook}"} for hook in hooks["enabled"]]
 
     return session_config
 
