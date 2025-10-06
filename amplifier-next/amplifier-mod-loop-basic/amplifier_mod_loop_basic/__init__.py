@@ -99,6 +99,16 @@ class BasicOrchestrator:
                 await context.add_message({"role": "assistant", "content": final_response})
                 break
 
+            # Add assistant message with tool calls to context
+            # This is required so Anthropic sees the tool_use blocks before tool_result blocks
+            await context.add_message(
+                {
+                    "role": "assistant",
+                    "content": response.content if response.content else "",
+                    "tool_calls": [{"tool": tc.tool, "arguments": tc.arguments, "id": tc.id} for tc in tool_calls],
+                }
+            )
+
             # Execute tool calls
             for tool_call in tool_calls:
                 # Pre-tool hook
@@ -138,6 +148,7 @@ class BasicOrchestrator:
                     {
                         "role": "tool",
                         "name": tool_call.tool,
+                        "tool_call_id": tool_call.id,
                         "content": str(result.output) if result.success else f"Error: {result.error}",
                     }
                 )

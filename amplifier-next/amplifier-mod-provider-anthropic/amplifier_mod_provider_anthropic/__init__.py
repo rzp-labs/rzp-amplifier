@@ -156,22 +156,51 @@ class AnthropicProvider:
             # Convert role names
             if role == "tool":
                 # Tool results in Anthropic format
+                tool_use_id = msg.get("tool_call_id")
+                if not tool_use_id:
+                    logger.warning(f"Tool result missing tool_call_id: {msg}")
+                    tool_use_id = "unknown"  # Fallback, but will likely fail
+
                 anthropic_messages.append(
                     {
                         "role": "user",
                         "content": [
                             {
                                 "type": "tool_result",
-                                "tool_use_id": msg.get("tool_call_id", "unknown"),
+                                "tool_use_id": tool_use_id,
                                 "content": content,
                             }
                         ],
                     }
                 )
+            elif role == "assistant":
+                # Assistant messages - check for tool calls
+                if "tool_calls" in msg and msg["tool_calls"]:
+                    # Assistant message with tool calls
+                    content_blocks = []
+
+                    # Add text content if present
+                    if content:
+                        content_blocks.append({"type": "text", "text": content})
+
+                    # Add tool_use blocks
+                    for tc in msg["tool_calls"]:
+                        content_blocks.append(
+                            {
+                                "type": "tool_use",
+                                "id": tc.get("id", ""),
+                                "name": tc.get("tool", ""),
+                                "input": tc.get("arguments", {}),
+                            }
+                        )
+
+                    anthropic_messages.append({"role": "assistant", "content": content_blocks})
+                else:
+                    # Regular assistant message
+                    anthropic_messages.append({"role": "assistant", "content": content})
             else:
-                # Regular messages
-                anthropic_role = "assistant" if role == "assistant" else "user"
-                anthropic_messages.append({"role": anthropic_role, "content": content})
+                # User messages
+                anthropic_messages.append({"role": "user", "content": content})
 
         return anthropic_messages
 
