@@ -1,0 +1,19 @@
+# default-config.toml (app-layer; not read by kernel)
+
+[session]
+orchestrator = "loop-basic"
+context = "context-simple"
+search_paths = ["./.amplifier/modules", "~/.amplifier/modules"]
+
+[providers]
+# Example provider defaults (module policy)
+anthropic = { model = "claude-3-5-sonnet", api_key = "env:ANTHROPIC_API_KEY" }
+openai    = { model = "gpt-4o-mini",       api_key = "env:OPENAI_API_KEY" }
+
+[tools]
+filesystem = { root = "." }
+bash       = { shell = "/bin/bash" }
+
+[hooks]
+logging   = { enabled = true }
+redaction = { enabled = true }

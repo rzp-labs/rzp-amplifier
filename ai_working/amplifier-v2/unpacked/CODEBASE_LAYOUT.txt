@@ -1,0 +1,206 @@
++ .devcontainer
+  - .devcontainer/devcontainer.json
+  - .devcontainer/OPTIMIZING_FOR_CODESPACES.md
+  - .devcontainer/post-create.sh
+  - .devcontainer/POST_SETUP_README.md
+  - .devcontainer/README.md
++ amplifier
+  + amplifier/docs
+    - amplifier/docs/DEVELOPER.md
+    - amplifier/docs/USER_GUIDE.md
+  - amplifier/CODE_OF_CONDUCT.md
+  - amplifier/default-config.toml
+  - amplifier/LICENSE
+  - amplifier/pyproject.toml
+  - amplifier/README.md
+  - amplifier/SECURITY.md
+  - amplifier/SUPPORT.md
++ amplifier-cli
+  + amplifier-cli/amplifier_cli
+    - amplifier-cli/amplifier_cli/__init__.py
+    - amplifier-cli/amplifier_cli/__main__.py
+    - amplifier-cli/amplifier_cli/main.py
+  - amplifier-cli/CODE_OF_CONDUCT.md
+  - amplifier-cli/LICENSE
+  - amplifier-cli/pyproject.toml
+  - amplifier-cli/README.md
+  - amplifier-cli/SECURITY.md
+  - amplifier-cli/SUPPORT.md
++ amplifier-core
+  + amplifier-core/amplifier_core
+    + amplifier-core/amplifier_core/utils
+    - amplifier-core/amplifier_core/__init__.py
+    - amplifier-core/amplifier_core/coordinator.py
+    - amplifier-core/amplifier_core/hooks.py
+    - amplifier-core/amplifier_core/interfaces.py
+    - amplifier-core/amplifier_core/loader.py
+    - amplifier-core/amplifier_core/models.py
+    - amplifier-core/amplifier_core/session.py
+    - amplifier-core/amplifier_core/testing.py
+  + amplifier-core/tests
+    - amplifier-core/tests/test_session.py
+  - amplifier-core/CODE_OF_CONDUCT.md
+  - amplifier-core/LICENSE
+  - amplifier-core/pyproject.toml
+  - amplifier-core/SECURITY.md
+  - amplifier-core/SUPPORT.md
++ amplifier-mod-agent-architect
+  + amplifier-mod-agent-architect/amplifier_mod_agent_architect
+    - amplifier-mod-agent-architect/amplifier_mod_agent_architect/__init__.py
+  - amplifier-mod-agent-architect/CODE_OF_CONDUCT.md
+  - amplifier-mod-agent-architect/LICENSE
+  - amplifier-mod-agent-architect/pyproject.toml
+  - amplifier-mod-agent-architect/SECURITY.md
+  - amplifier-mod-agent-architect/SUPPORT.md
++ amplifier-mod-context-persistent
+  + amplifier-mod-context-persistent/amplifier_mod_context_persistent
+    - amplifier-mod-context-persistent/amplifier_mod_context_persistent/__init__.py
+  - amplifier-mod-context-persistent/CODE_OF_CONDUCT.md
+  - amplifier-mod-context-persistent/LICENSE
+  - amplifier-mod-context-persistent/pyproject.toml
+  - amplifier-mod-context-persistent/README.md
+  - amplifier-mod-context-persistent/SECURITY.md
+  - amplifier-mod-context-persistent/SUPPORT.md
++ amplifier-mod-context-simple
+  + amplifier-mod-context-simple/amplifier_mod_context_simple
+    - amplifier-mod-context-simple/amplifier_mod_context_simple/__init__.py
+  - amplifier-mod-context-simple/CODE_OF_CONDUCT.md
+  - amplifier-mod-context-simple/LICENSE
+  - amplifier-mod-context-simple/pyproject.toml
+  - amplifier-mod-context-simple/SECURITY.md
+  - amplifier-mod-context-simple/SUPPORT.md
++ amplifier-mod-hooks-backup
+  + amplifier-mod-hooks-backup/amplifier_mod_hooks_backup
+    - amplifier-mod-hooks-backup/amplifier_mod_hooks_backup/__init__.py
+  - amplifier-mod-hooks-backup/CODE_OF_CONDUCT.md
+  - amplifier-mod-hooks-backup/LICENSE
+  - amplifier-mod-hooks-backup/pyproject.toml
+  - amplifier-mod-hooks-backup/SECURITY.md
+  - amplifier-mod-hooks-backup/SUPPORT.md
++ amplifier-mod-hooks-logging
+  + amplifier-mod-hooks-logging/amplifier_mod_hooks_logging
+    - amplifier-mod-hooks-logging/amplifier_mod_hooks_logging/__init__.py
+  - amplifier-mod-hooks-logging/CODE_OF_CONDUCT.md
+  - amplifier-mod-hooks-logging/LICENSE
+  - amplifier-mod-hooks-logging/pyproject.toml
+  - amplifier-mod-hooks-logging/README.md
+  - amplifier-mod-hooks-logging/SECURITY.md
+  - amplifier-mod-hooks-logging/SUPPORT.md
++ amplifier-mod-loop-basic
+  + amplifier-mod-loop-basic/amplifier_mod_loop_basic
+    - amplifier-mod-loop-basic/amplifier_mod_loop_basic/__init__.py
+  - amplifier-mod-loop-basic/CODE_OF_CONDUCT.md
+  - amplifier-mod-loop-basic/LICENSE
+  - amplifier-mod-loop-basic/pyproject.toml
+  - amplifier-mod-loop-basic/SECURITY.md
+  - amplifier-mod-loop-basic/SUPPORT.md
++ amplifier-mod-loop-streaming
+  + amplifier-mod-loop-streaming/amplifier_mod_loop_streaming
+    - amplifier-mod-loop-streaming/amplifier_mod_loop_streaming/__init__.py
+  - amplifier-mod-loop-streaming/CODE_OF_CONDUCT.md
+  - amplifier-mod-loop-streaming/LICENSE
+  - amplifier-mod-loop-streaming/pyproject.toml
+  - amplifier-mod-loop-streaming/SECURITY.md
+  - amplifier-mod-loop-streaming/SUPPORT.md
++ amplifier-mod-provider-anthropic
+  + amplifier-mod-provider-anthropic/amplifier_mod_provider_anthropic
+    - amplifier-mod-provider-anthropic/amplifier_mod_provider_anthropic/__init__.py
+  - amplifier-mod-provider-anthropic/CODE_OF_CONDUCT.md
+  - amplifier-mod-provider-anthropic/LICENSE
+  - amplifier-mod-provider-anthropic/pyproject.toml
+  - amplifier-mod-provider-anthropic/SECURITY.md
+  - amplifier-mod-provider-anthropic/SUPPORT.md
++ amplifier-mod-provider-mock
+  + amplifier-mod-provider-mock/amplifier_mod_provider_mock
+    - amplifier-mod-provider-mock/amplifier_mod_provider_mock/__init__.py
+  - amplifier-mod-provider-mock/CODE_OF_CONDUCT.md
+  - amplifier-mod-provider-mock/LICENSE
+  - amplifier-mod-provider-mock/pyproject.toml
+  - amplifier-mod-provider-mock/README.md
+  - amplifier-mod-provider-mock/SECURITY.md
+  - amplifier-mod-provider-mock/SUPPORT.md
++ amplifier-mod-provider-openai
+  + amplifier-mod-provider-openai/amplifier_mod_provider_openai
+    - amplifier-mod-provider-openai/amplifier_mod_provider_openai/__init__.py
+  - amplifier-mod-provider-openai/CODE_OF_CONDUCT.md
+  - amplifier-mod-provider-openai/LICENSE
+  - amplifier-mod-provider-openai/pyproject.toml
+  - amplifier-mod-provider-openai/SECURITY.md
+  - amplifier-mod-provider-openai/SUPPORT.md
++ amplifier-mod-tool-bash
+  + amplifier-mod-tool-bash/amplifier_mod_tool_bash
+    - amplifier-mod-tool-bash/amplifier_mod_tool_bash/__init__.py
+  - amplifier-mod-tool-bash/CODE_OF_CONDUCT.md
+  - amplifier-mod-tool-bash/LICENSE
+  - amplifier-mod-tool-bash/pyproject.toml
+  - amplifier-mod-tool-bash/SECURITY.md
+  - amplifier-mod-tool-bash/SUPPORT.md
++ amplifier-mod-tool-filesystem
+  + amplifier-mod-tool-filesystem/amplifier_mod_tool_filesystem
+    - amplifier-mod-tool-filesystem/amplifier_mod_tool_filesystem/__init__.py
+  - amplifier-mod-tool-filesystem/CODE_OF_CONDUCT.md
+  - amplifier-mod-tool-filesystem/LICENSE
+  - amplifier-mod-tool-filesystem/pyproject.toml
+  - amplifier-mod-tool-filesystem/README.md
+  - amplifier-mod-tool-filesystem/SECURITY.md
+  - amplifier-mod-tool-filesystem/SUPPORT.md
++ amplifier-mod-tool-search
+  + amplifier-mod-tool-search/amplifier_mod_tool_search
+    - amplifier-mod-tool-search/amplifier_mod_tool_search/__init__.py
+    - amplifier-mod-tool-search/amplifier_mod_tool_search/glob.py
+    - amplifier-mod-tool-search/amplifier_mod_tool_search/grep.py
+  - amplifier-mod-tool-search/CODE_OF_CONDUCT.md
+  - amplifier-mod-tool-search/LICENSE
+  - amplifier-mod-tool-search/pyproject.toml
+  - amplifier-mod-tool-search/README.md
+  - amplifier-mod-tool-search/SECURITY.md
+  - amplifier-mod-tool-search/SUPPORT.md
++ amplifier-mod-tool-task
+  + amplifier-mod-tool-task/amplifier_mod_tool_task
+    - amplifier-mod-tool-task/amplifier_mod_tool_task/__init__.py
+  - amplifier-mod-tool-task/CODE_OF_CONDUCT.md
+  - amplifier-mod-tool-task/LICENSE
+  - amplifier-mod-tool-task/pyproject.toml
+  - amplifier-mod-tool-task/README.md
+  - amplifier-mod-tool-task/SECURITY.md
+  - amplifier-mod-tool-task/SUPPORT.md
++ amplifier-mod-tool-web
+  + amplifier-mod-tool-web/amplifier_mod_tool_web
+    - amplifier-mod-tool-web/amplifier_mod_tool_web/__init__.py
+  - amplifier-mod-tool-web/CODE_OF_CONDUCT.md
+  - amplifier-mod-tool-web/LICENSE
+  - amplifier-mod-tool-web/pyproject.toml
+  - amplifier-mod-tool-web/README.md
+  - amplifier-mod-tool-web/SECURITY.md
+  - amplifier-mod-tool-web/SUPPORT.md
++ docs
+  - docs/ARCHITECTURE.md
++ examples
+  - examples/using_amplifier_core.py
++ scripts
+  - scripts/create-module.sh
+  - scripts/init-project.sh
+  - scripts/install-dev.sh
+  - scripts/run-cli.sh
+  - scripts/test-all.sh
+- .gitignore
+- AGENTS.md
+- ARCHITECTURE.md
+- CLAUDE.md
+- CODE_OF_CONDUCT.md
+- dev-config.toml
+- IMPLEMENTATION_REPORT.md
+- LICENSE
+- production-config.toml
+- README.md
+- ROADMAP.md
+- SECURITY.md
+- SUPPORT.md
+- test-anthropic-config.toml
+- test-full-features.toml
+- test-openai-config.toml
+- test_anthropic.py
+- test_openai.py
+- test_provider_tools.py
+- test_tools.py
+- USAGE_GUIDE.md
