@@ -12,16 +12,20 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo ""
 
 # Verify we're in the right place
-if [ ! -d "amplifier-dev" ]; then
-    echo "✗ Error: amplifier-dev directory not found"
+if [ ! -d ".git" ]; then
+    echo "✗ Error: Not in a git repository"
     echo "  Are you in the project root? ($(pwd))"
     exit 1
 fi
 
-# Step 1: Verify authentication
-echo "→ Step 1/4: Verifying authentication..."
+# Step 1: Configure authentication
+echo "→ Step 1/6: Configuring authentication..."
+
+# Handle authentication - work with Codespace environment
 if [ -n "${GITHUB_TOKEN:-}" ]; then
-    echo "  ✓ Using GITHUB_TOKEN (Codespace environment)"
+    echo "  ✓ Using GITHUB_TOKEN for authentication (Codespace environment)"
+    # Configure git to use the token for GitHub access
+    git config --global url."https://${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
 elif gh auth status &> /dev/null; then
     echo "  ✓ Authenticated with GitHub CLI"
 else
@@ -33,18 +37,38 @@ else
     exit 1
 fi
 
-# Step 2: Git fetch all remotes
+# Step 2: Configure Git settings
 echo ""
-echo "→ Step 2/4: Fetching latest from all remotes..."
+echo "→ Step 2/6: Configuring Git..."
+git config --global push.autoSetupRemote true
+
+# Mark parent repository as safe directory
+echo "  Marking repository as safe directory..."
+git config --global --add safe.directory /workspaces/amplifier
+echo "  ✓ Git configured"
+
+# Step 3: Initialize parent submodule (amplifier-dev)
+echo ""
+echo "→ Step 3/6: Initializing parent submodule (amplifier-dev)..."
+git submodule update --init amplifier-dev
+
+# Mark amplifier-dev as safe
+echo "  Marking amplifier-dev as safe directory..."
+git config --global --add safe.directory /workspaces/amplifier/amplifier-dev
+echo "  ✓ amplifier-dev submodule initialized"
+
+# Step 4: Git fetch all remotes
+echo ""
+echo "→ Step 4/6: Fetching latest from all remotes..."
 git fetch --all -p
 echo "  ✓ Remotes updated"
 
-# Step 3: Enter amplifier-dev and update submodules
+# Step 5: Enter amplifier-dev and initialize nested submodules
 echo ""
-echo "→ Step 3/4: Entering amplifier-dev and updating submodules..."
+echo "→ Step 5/6: Entering amplifier-dev and updating nested submodules..."
 cd amplifier-dev
 
-# Sync and update all submodules
+# Sync and update all nested submodules
 echo "  Syncing submodule configurations..."
 git submodule sync
 
@@ -52,17 +76,17 @@ echo "  Updating submodules (this may take a moment)..."
 git submodule update --init --recursive
 
 # Mark all nested submodules as safe
-echo "  Marking all nested submodules as safe..."
+echo "  Marking all nested submodules as safe directories..."
 git submodule foreach --recursive 'git config --global --add safe.directory "$toplevel/$sm_path"'
 
-echo "  ✓ amplifier-dev submodules updated"
+echo "  ✓ Nested submodules updated and marked as safe"
 
 # Return to root
 cd ..
 
-# Step 4: Verify setup
+# Step 6: Verify setup
 echo ""
-echo "→ Step 4/4: Verifying setup..."
+echo "→ Step 6/6: Verifying setup..."
 echo "  Parent repository: $(pwd)"
 echo "  Submodule status:"
 git submodule status | head -5
@@ -75,16 +99,13 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo "   ✅ Amplifier-dev Setup Complete!"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
-echo "Your environment is ready! To activate it in THIS terminal:"
-echo "  source ~/.amplifier-env"
+echo "Your environment is ready!"
 echo ""
-echo "Then you can start Claude Code:"
+echo "Start Claude Code:"
 echo "  claude"
 echo ""
 echo "Useful commands:"
 echo "  • Update everything:  ./ai_working/amplifier-v2/freshen-parent.sh"
 echo "  • Push changes:       ./ai_working/amplifier-v2/push-parent.sh"
 echo "  • Full workflow:      See ai_working/amplifier-v2/BOOTSTRAP_GUIDE.md"
-echo ""
-echo "Note: New terminals will have the environment activated automatically."
 echo ""
