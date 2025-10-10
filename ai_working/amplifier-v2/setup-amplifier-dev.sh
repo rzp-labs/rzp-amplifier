@@ -59,6 +59,8 @@ else
     echo "  ✓ GitHub CLI already authenticated"
 fi
 
+# Export empty GITHUB_TOKEN so git uses gh CLI credentials instead
+export GITHUB_TOKEN=
 echo "  ✓ GitHub CLI authenticated (credentials will be used for git operations)"
 
 # Step 2: Configure Git settings
