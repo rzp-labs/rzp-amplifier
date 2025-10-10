@@ -21,21 +21,32 @@ fi
 # Step 1: Configure authentication
 echo "→ Step 1/6: Configuring authentication..."
 
-# Handle authentication - work with Codespace environment
+# Ensure GITHUB_TOKEN is not used (it has limited permissions for private repos)
 if [ -n "${GITHUB_TOKEN:-}" ]; then
-    echo "  ✓ Using GITHUB_TOKEN for authentication (Codespace environment)"
-    # Configure git to use the token for GitHub access
-    git config --global url."https://${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
-elif gh auth status &> /dev/null; then
-    echo "  ✓ Authenticated with GitHub CLI"
-else
-    echo "  ✗ Not authenticated"
+    echo "  Detected GITHUB_TOKEN in environment - unsetting it..."
+    unset GITHUB_TOKEN
+fi
+
+# Clear any git credential configurations that might use tokens
+echo "  Clearing any token-based git configurations..."
+# Remove any URL rewrites that include authentication tokens
+for config in $(git config --global --get-regexp '^url\.' 2>/dev/null | grep '@github\.com' | cut -d' ' -f1 | sed 's/\.insteadof.*//'); do
+    git config --global --remove-section "$config" 2>/dev/null || true
+done
+
+# Verify gh CLI authentication is available
+echo "  Verifying GitHub CLI authentication..."
+if ! gh auth status &> /dev/null; then
+    echo "  ✗ Not authenticated with GitHub CLI"
     echo ""
+    echo "  This branch requires GitHub CLI authentication for private repo access"
     echo "  Please run: gh auth login"
     echo "  After authentication, run this script again"
     echo ""
     exit 1
 fi
+
+echo "  ✓ GitHub CLI authenticated (credentials will be used for git operations)"
 
 # Step 2: Configure Git settings
 echo ""
