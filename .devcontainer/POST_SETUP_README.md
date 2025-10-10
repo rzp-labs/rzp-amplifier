@@ -4,6 +4,10 @@ The steps below will help you get started with the project.
 
 ## How to use
 
+- Launch a new Terminal session
+- Run `./.devcontainer/post-create.sh`
+- Upon completion of script, activate the changes with `source ~/.bashrc`
+
 See the [README](../README.md) for more details on how to use the project.
 
 ### Connecting to the Codespace in the future
