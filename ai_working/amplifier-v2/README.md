@@ -2,14 +2,14 @@
 
 This directory contains planning documents and archived completed work for Amplifier v2.
 
-## Current Planning Documents
+## Prior Planning Documents
 
 These documents are kept for reference and may be outdated. Review before using:
 
-- **amplifier-implementation-plan.md** - Original implementation plan
-- **amplifier-quick-reference.md** - Quick reference guide
-- **amplifier-technical-implementation.md** - Technical implementation details
-- **exhaustive-writeup.md** - Comprehensive writeup
+- **completed/amplifier-implementation-plan.md** - Original implementation plan
+- **completed/amplifier-quick-reference.md** - Quick reference guide
+- **completed/amplifier-technical-implementation.md** - Technical implementation details
+- **completed/exhaustive-writeup.md** - Comprehensive writeup
 
 ## Completed Work Archives
 
@@ -26,10 +26,3 @@ Event-driven orchestration implementation (committed in 7a9a923):
 Various bugfixes completed before event-driven work:
 - BUGFIX_BASH_TOOL.md
 - BUGFIX_REPORT.md
-
-## Cleanup Notes
-
-Last cleaned: 2025-10-07
-- Removed old transcript files (v1→v2 exploration)
-- Removed temporary unpacked files
-- Archived completed implementation docs
