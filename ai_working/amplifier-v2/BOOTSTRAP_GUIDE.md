@@ -151,6 +151,8 @@ microsoft/amplifier (THIS REPOSITORY - Public)
 
 ⭐ **CRITICAL:** Read `amplifier-dev/docs/KERNEL_PHILOSOPHY.md` before making any changes.
 
+📋 **ROADMAP:** See `amplifier-dev/docs/KERNEL_ARCHITECTURE_ROADMAP.md` for implementation status and timeline.
+
 Amplifier v2 follows a **Linux kernel-inspired architecture**:
 
 ### The Kernel (amplifier-core)
@@ -559,8 +561,9 @@ git push origin your-branch
 
 ### Must-Read First
 1. **`amplifier-dev/docs/KERNEL_PHILOSOPHY.md`** - Core design principles ⭐
-2. **`amplifier-dev/docs/ARCHITECTURE.md`** - System architecture
-3. **`amplifier-dev/docs/GIT_WORKFLOW.md`** - Managing 21 submodules
+2. **`amplifier-dev/docs/KERNEL_ARCHITECTURE_ROADMAP.md`** - Implementation roadmap & status 📋
+3. **`amplifier-dev/docs/ARCHITECTURE.md`** - System architecture
+4. **`amplifier-dev/docs/GIT_WORKFLOW.md`** - Managing 21 submodules
 
 ### For Specific Tasks
 - **Module Development:** `amplifier-dev/docs/DEVELOPER_GUIDE.md`
