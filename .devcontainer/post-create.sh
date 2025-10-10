@@ -6,8 +6,14 @@ echo "   Amplifier Codespace Post-Create Setup"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
-# Step 1: Setup pnpm
-echo "→ Step 1/4: Setting up pnpm..."
+# Step 1: Configure Git
+echo "→ Step 1/6: Configuring Git..."
+git config --global push.autoSetupRemote true || true
+echo "  ✓ Git configured (auto-create upstream on push)"
+
+# Step 2: Setup pnpm
+echo ""
+echo "→ Step 2/6: Setting up pnpm..."
 if ! command -v pnpm &> /dev/null; then
     echo "  Installing pnpm globally..."
     npm install -g pnpm || {
@@ -45,9 +51,9 @@ echo "  Updating pnpm..."
 pnpm self-update || echo "  ⚠ pnpm self-update failed (non-critical)"
 echo "  ✓ pnpm configured (version: $(pnpm --version))"
 
-# Step 2: Install project dependencies
+# Step 3: Install project dependencies
 echo ""
-echo "→ Step 2/4: Installing project dependencies..."
+echo "→ Step 3/6: Installing project dependencies..."
 cd /workspaces/amplifier || {
     echo "  ❌ Failed to cd to /workspaces/amplifier"
     exit 1
@@ -61,9 +67,9 @@ make install || {
 }
 echo "  ✓ Dependencies installed"
 
-# Step 3: Check Python virtual environment (don't activate - just verify)
+# Step 4: Check Python virtual environment (don't activate - just verify)
 echo ""
-echo "→ Step 3/4: Checking Python virtual environment..."
+echo "→ Step 4/6: Checking Python virtual environment..."
 if [ -f .venv/bin/activate ]; then
     echo "  ✓ Virtual environment exists at .venv"
     echo "  Python in venv: $(.venv/bin/python --version 2>&1 || echo 'Failed to get version')"
@@ -73,23 +79,13 @@ else
     exit 1
 fi
 
-# Step 4: Final verification
+# Step 5: Configure shell environment for automatic activation
 echo ""
-echo "→ Step 4/4: Verifying setup..."
+echo "→ Step 5/6: Configuring shell environment..."
 echo "  System Python: $(which python 2>/dev/null || echo 'not found')"
 echo "  Venv Python: $(ls -la .venv/bin/python 2>/dev/null || echo 'not found')"
 echo "  pnpm: $(which pnpm 2>/dev/null || echo 'not found') $(pnpm --version 2>/dev/null || echo '')"
 echo "  Node: $(which node 2>/dev/null || echo 'not found') $(node --version 2>/dev/null || echo '')"
-
-# Check if claude is available globally via pnpm
-if command -v claude &> /dev/null; then
-    echo "  claude: $(which claude) (version: $(claude --version 2>/dev/null || echo 'unknown'))"
-else
-    echo "  claude: Will be available after environment activation"
-fi
-
-echo ""
-echo "→ Step 5/5: Configuring shell environment..."
 
 # Ensure .bashrc has pnpm PATH (idempotent check)
 if ! grep -q "# pnpm" ~/.bashrc 2>/dev/null; then
@@ -122,7 +118,35 @@ else
     echo "  ✓ venv activation already configured in .bashrc"
 fi
 
+# Ensure .bash_profile sources .bashrc (for VS Code terminals)
+if [ ! -f ~/.bash_profile ] || ! grep -q "source.*bashrc" ~/.bash_profile; then
+    echo "  Adding .bash_profile to source .bashrc..."
+    cat >> ~/.bash_profile << 'EOF'
+# Source .bashrc if it exists
+if [ -f ~/.bashrc ]; then
+    . ~/.bashrc
+fi
+EOF
+else
+    echo "  ✓ .bash_profile already configured"
+fi
+
 echo "  ✓ Shell environment configured"
+
+# Step 6: Final verification
+echo ""
+echo "→ Step 6/6: Verifying setup..."
+echo "  System Python: $(which python 2>/dev/null || echo 'not found')"
+echo "  Venv Python: $(ls -la .venv/bin/python 2>/dev/null || echo 'not found')"
+echo "  pnpm: $(which pnpm 2>/dev/null || echo 'not found') $(pnpm --version 2>/dev/null || echo '')"
+echo "  Node: $(which node 2>/dev/null || echo 'not found') $(node --version 2>/dev/null || echo '')"
+
+# Check if claude is available
+if command -v claude &> /dev/null; then
+    echo "  claude: $(which claude) (version: $(claude --version 2>/dev/null || echo 'unknown'))"
+else
+    echo "  claude: Will be available after sourcing .bashrc"
+fi
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
@@ -134,5 +158,8 @@ echo ""
 echo "To activate in THIS terminal, run:"
 echo "   source ~/.bashrc"
 echo ""
-echo "New terminals will have the environment activated automatically."
+echo "All new terminals will automatically have:"
+echo "  • Python venv activated"
+echo "  • pnpm in PATH"
+echo "  • claude command available"
 echo ""
