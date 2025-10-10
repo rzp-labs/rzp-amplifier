@@ -41,26 +41,15 @@ echo "  ✓ pnpm updated"
 
 # Step 3: Install project dependencies
 echo ""
-echo "→ Step 3/5: Installing project dependencies..."
+echo "→ Step 3/4: Installing project dependencies..."
 cd /workspaces/amplifier
 make install
 echo "  ✓ Dependencies installed"
 
-# Step 4: Configure shell to unset GITHUB_TOKEN automatically
+# Step 4: Configure Python venv auto-activation
 echo ""
-echo "→ Step 4/5: Configuring shell environment..."
+echo "→ Step 4/4: Configuring shell environment..."
 BASHRC_PATH="$HOME/.bashrc"
-
-# Add GITHUB_TOKEN unsetting to .bashrc if not already present
-if ! grep -q "# Amplifier: Unset GITHUB_TOKEN" "$BASHRC_PATH" 2>/dev/null; then
-    echo "" >> "$BASHRC_PATH"
-    echo "# Amplifier: Unset GITHUB_TOKEN to prevent conflicts with gh CLI" >> "$BASHRC_PATH"
-    echo "# This allows 'gh auth login' to work properly without token interference" >> "$BASHRC_PATH"
-    echo "unset GITHUB_TOKEN 2>/dev/null || true" >> "$BASHRC_PATH"
-    echo "  ✓ Added GITHUB_TOKEN unsetting to .bashrc"
-else
-    echo "  ✓ GITHUB_TOKEN unsetting already configured"
-fi
 
 # Add venv auto-activation to .bashrc if not already present
 if ! grep -q "# Amplifier: Auto-activate venv" "$BASHRC_PATH" 2>/dev/null; then
@@ -74,87 +63,12 @@ else
     echo "  ✓ venv auto-activation already configured"
 fi
 
-# Step 5: Create post-setup guide
-echo ""
-echo "→ Step 5/5: Creating setup guide..."
-cat > /workspaces/amplifier/.devcontainer/POST_SETUP_README.md << 'EOF'
-# Amplifier Codespace Setup Complete! 🎉
-
-Your development environment is ready. Here's what was configured:
-
-## What Happened Automatically
-
-✅ **Git Configuration** - Auto-create upstream branches on first push
-✅ **pnpm Setup** - Configured and updated to latest version
-✅ **Dependencies** - All project dependencies installed via `make install`
-✅ **Python venv** - Virtual environment created and auto-activation configured
-✅ **GITHUB_TOKEN** - Automatically unset in new terminals (prevents gh CLI conflicts)
-
-## Next Steps
-
-### 1. Complete GitHub Authentication
-
-The Codespace automatically provides a GITHUB_TOKEN, but for working with amplifier-dev, you need to authenticate via `gh auth login`:
-
-```bash
-gh auth login
-```
-
-Follow the prompts to authenticate. This is required for:
-- Accessing private repositories
-- Managing submodules
-- Push/pull operations
-
-### 2. Setup Amplifier-dev (Branch-Specific)
-
-If you're working on the amplifier-v2 branch:
-
-```bash
-./ai_working/amplifier-v2/setup-amplifier-dev.sh
-```
-
-This will:
-- Verify gh authentication
-- Update git remotes
-- Initialize all submodules
-- Configure safe directories
-
-### 3. Start Developing
-
-```bash
-claude
-```
-
-## Useful Commands
-
-- **Update everything:** `./ai_working/amplifier-v2/freshen-parent.sh`
-- **Run checks:** `make check`
-- **Run tests:** `make test`
-- **See all commands:** `make help`
-
-## Documentation
-
-- **Bootstrap Guide:** `ai_working/amplifier-v2/BOOTSTRAP_GUIDE.md`
-- **Git Workflow:** `ai_working/amplifier-v2/git_workflow/SUBMODULE_WORKFLOW.md`
-
----
-
-**Note:** New terminals will automatically:
-- Unset GITHUB_TOKEN (prevents conflicts)
-- Activate Python virtual environment
-
-No manual environment setup needed! 🚀
-EOF
-
-echo "  ✓ Post-setup guide created"
-
-# Unset GITHUB_TOKEN for this session
-unset GITHUB_TOKEN 2>/dev/null || true
-
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo "   ✅ Post-Create Setup Complete!"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
-echo "📝 Next steps: See POST_SETUP_README.md"
+echo "📝 Next steps:"
+echo "   1. Authenticate: gh auth login"
+echo "   2. See: ai_working/amplifier-v2/BOOTSTRAP_GUIDE.md"
 echo ""
