@@ -28,6 +28,9 @@ PNPM_HOME="${PNPM_HOME:-$HOME/.local/share/pnpm}"
 export PNPM_HOME
 export PATH="$PNPM_HOME:$PATH"
 
+# Ensure SHELL is set for pnpm setup (required during automated Codespace creation)
+export SHELL="${SHELL:-/bin/bash}"
+
 # Ensure pnpm setup modifies bashrc
 pnpm setup || {
     echo "  ❌ pnpm setup failed"
