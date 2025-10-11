@@ -22,22 +22,17 @@ fi
 echo "→ Step 1/6: Configuring authentication..."
 
 # Clear any git credential configurations that might use tokens
-echo "  Clearing any token-based git configurations..."
-for config in $(git config --global --get-regexp '^url\.' 2>/dev/null | grep '@github\.com' | cut -d' ' -f1 | sed 's/\.insteadof.*//'); do
-    git config --global --remove-section "$config" 2>/dev/null || true
-done
+# Export empty GITHUB_TOKEN so git uses gh CLI credentials instead
+echo "  Clearing GITHUB_TOKEN to ensure gh CLI is used for authentication..."
+unset GITHUB_TOKEN
 
 # Check gh CLI authentication status (explicitly without GITHUB_TOKEN)
 echo "  Checking GitHub CLI authentication..."
-if ! GITHUB_TOKEN= gh auth status &> /dev/null; then
-    echo "  ✗ Not authenticated with GitHub CLI"
-    echo ""
-    echo "  Starting GitHub authentication..."
-    echo "  → This will open your browser for authentication"
-    echo ""
+if ! gh auth status &> /dev/null; then
+    echo "  GitHub CLI not authenticated, initiating login..."
 
     # Run gh auth login with minimal prompts
-    if ! GITHUB_TOKEN= gh auth login --web --hostname github.com --git-protocol https; then
+    if ! gh auth login --web --hostname github.com --git-protocol https; then
         echo ""
         echo "  ✗ GitHub authentication failed"
         echo "  Please try running manually: gh auth login"
@@ -46,7 +41,7 @@ if ! GITHUB_TOKEN= gh auth status &> /dev/null; then
     fi
 
     # Verify authentication succeeded
-    if ! GITHUB_TOKEN= gh auth status &> /dev/null; then
+    if ! gh auth status &> /dev/null; then
         echo ""
         echo "  ✗ GitHub authentication verification failed"
         echo "  Please try running manually: gh auth login"
@@ -66,7 +61,6 @@ echo "  ✓ GitHub CLI authenticated (credentials will be used for git operation
 # Step 2: Configure Git settings
 echo ""
 echo "→ Step 2/6: Configuring Git..."
-git config --global push.autoSetupRemote true
 
 # Mark parent repository as safe directory
 echo "  Marking repository as safe directory..."
