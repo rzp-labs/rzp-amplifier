@@ -11,6 +11,17 @@ echo "→ Step 1/6: Configuring Git..."
 git config --global push.autoSetupRemote true || true
 echo "  ✓ Git configured (auto-create upstream on push)"
 
+# Unshallow the repository if it's a shallow clone
+if [ -f .git/shallow ]; then
+    echo "  Unshallowing git repository (fetching full history)..."
+    git fetch --unshallow || {
+        echo "  ⚠ Failed to unshallow repository (non-critical)"
+    }
+    echo "  ✓ Repository unshallowed (full history available)"
+else
+    echo "  ✓ Repository already has full history"
+fi
+
 # Step 2: Setup pnpm
 echo ""
 echo "→ Step 2/6: Setting up pnpm..."
