@@ -51,6 +51,10 @@ dev = [
     "twine>=6.1.0",
 ]
 
+[tool.pytest.ini_options]
+testpaths = ["amplifier-dev"]
+norecursedirs = ["ai_working", ".venv", "node_modules", ".git", "build", "dist", ".data"]
+
 [tool.pyright]
 venvPath = "."
 venv = ".venv"
