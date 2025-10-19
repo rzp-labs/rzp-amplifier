@@ -66,5 +66,4 @@ ai_working/tmp
 
 # Smoke test runtime logs
 .smoke_test_data/data
-.amplifier/
 *.log.jsonl
