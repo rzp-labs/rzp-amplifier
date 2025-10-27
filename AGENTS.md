@@ -23,6 +23,18 @@ This file provides guidance to AI assistants when working with code in this repo
 
 ---
 
+## Git Commit Message Guidelines
+
+When creating git commit messages, always insert the following at the end of your commit message:
+
+```
+🤖 Generated with [Amplifier](https://github.com/microsoft/amplifier)
+
+Co-Authored-By: Amplifier <240397093+microsoft-amplifier@users.noreply.github.com>
+```
+
+---
+
 ## Important: Consult DISCOVERIES.md
 
 Before implementing solutions to complex problems:
