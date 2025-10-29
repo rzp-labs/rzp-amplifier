@@ -13,7 +13,7 @@
   "features": {
     "ghcr.io/jungaretti/features/make:1": {},
     "ghcr.io/jungaretti/features/vim:1": {},
-    "ghcr.io/devcontainers-extras/features/pipx-package:1": {
+    "ghcr.io/devcontainers-extra/features/uv:1": {
       "package": "uv",
       "version": "latest"
     },
