@@ -1,3 +1,6 @@
 [submodule "orchestrator"]
 	path = orchestrator
 	url = https://github.com/rzp-labs/orchestrator.git
+[submodule "infrastructure"]
+	path = infrastructure
+	url = https://github.com/rzp-labs/infrastructure.git
