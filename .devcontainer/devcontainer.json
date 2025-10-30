@@ -25,7 +25,11 @@
       "pnpmVersion": "latest"
     },
     "ghcr.io/devcontainers/features/java:1": {
-      "version": "temurin-17"
+    },
+    "ghcr.io/devcontainers/features/java:1": {
+      "version": "21",
+      "installMaven": false,
+      "installGradle": false
     },
     "ghcr.io/anthropics/devcontainer-features/claude-code:1": {},
     "ghcr.io/devcontainers/features/sshd:1": {},
@@ -57,21 +61,54 @@
     },
     "vscode": {
       "extensions": [
+        // AI & Code Intelligence
         "anthropic.claude-code",
         "GitHub.copilot",
         "github.codespaces",
+
+        // Python
+        "ms-python.python",
+        "ms-python.debugpy",
+        "ms-python.vscode-pylance",
+        "charliermarsh.ruff",
+
+        // Ansible & IaC
+        "redhat.ansible",
+        "redhat.vscode-yaml",
+
+        // Shell
+        "timonwong.shellcheck",
+        "foxundermoon.shell-format",
+
+        // Code Quality
+        "EditorConfig.EditorConfig",
+        "sonarsource.sonarlint-vscode",
+        "usernamehw.errorlens",
+
+        // Git & GitHub
+        "eamodio.gitlens",
+        "github.vscode-pull-request-github",
+        "github.vscode-github-actions",
+
+        // Formatting & Language Support
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint",
+        "tamasfe.even-better-toml",
+        "mikestead.dotenv",
+
+        // Documentation
         "aaron-bond.better-comments",
         "bierner.markdown-mermaid",
         "bierner.markdown-preview-github-styles",
-        "charliermarsh.ruff",
-        "dbaeumer.vscode-eslint",
-        "esbenp.prettier-vscode",
-        "ms-python.debugpy",
-        "ms-python.python",
+        "streetsidesoftware.code-spell-checker",
+
+        // Utilities
         "ms-vscode.makefile-tools",
-        "tamasfe.even-better-toml",
-        "streetsidesoftware.code-spell-checker"
-      ]
+        "mechatroner.rainbow-csv"
+      ],
+      "settings": {
+        "sonarlint.ls.javaHome": "/usr/local/sdkman/candidates/java/current"
+      }
     }
   },
   "containerEnv": {
