@@ -79,6 +79,7 @@ exclude = [
     "dist/**",
     ".data/**",
     "ai_working/**",
+    "amplifier-dev/ansiterm/**",
 ]
 typeCheckingMode = "basic"
 reportMissingImports = false
