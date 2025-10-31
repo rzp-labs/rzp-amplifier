@@ -17,7 +17,7 @@
       "~/amplifier"
     ]
   },
-  "enableAllProjectMcpServers": false,
+  "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": ["browser-use", "deepwiki"],
   "hooks": {
     "SessionStart": [

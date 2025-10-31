@@ -1,5 +1,15 @@
 {
   "mcpServers": {
+    "api-supermemory-ai": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote@latest",
+        "https://api.supermemory.ai/mcp",
+        "--header",
+        "x-sm-project:rzp-labs"
+      ]
+    },
     "browser-use": {
       "command": "uvx",
       "args": ["browser-use[cli]==0.5.10", "--mcp"],
@@ -11,10 +21,6 @@
       "command": "npx",
       "args": ["-y", "@upstash/context7-mcp"]
     },
-    "deepwiki": {
-      "type": "http",
-      "url": "https://mcp.deepwiki.com/mcp"
-    },
     "repomix": {
       "command": "npx",
       "args": ["-y", "repomix", "--mcp"]
@@ -25,7 +31,12 @@
         "--from",
         "git+https://github.com/BeehiveInnovations/zen-mcp-server.git",
         "zen-mcp-server"
-      ]
+      ],
+      "env": {
+        "OPENAI_API_KEY": "${OPENAI_API_KEY}",
+        "GEMINI_API_KEY": "${GEMINI_API_KEY}",
+        "OPENROUTER_API_KEY": "${OPENROUTER_API_KEY"
+      }
     }
   }
 }
