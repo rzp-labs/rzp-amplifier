@@ -18,7 +18,7 @@ except ImportError:
 
 def read_pyproject_exclusions():
     """Read exclude patterns from pyproject.toml."""
-    default_excludes = {".venv", "__pycache__", ".git", "node_modules", ".tox", "templates"}
+    default_excludes = {".venv", "__pycache__", ".git", "node_modules", ".tox", "templates", ".cache"}
 
     if not tomllib or not Path("pyproject.toml").exists():
         return default_excludes
@@ -28,14 +28,19 @@ def read_pyproject_exclusions():
             config = tomllib.load(f)
 
         # Get pyright exclusions
-        pyright_excludes = config.get("tool", {}).get("pyright", {}).get("exclude", [])
+        pyright_config = config.get("tool", {}).get("pyright", {})
+        pyright_patterns = []
+        for key in ("exclude", "ignore"):
+            pyright_patterns.extend(pyright_config.get(key, []))
 
         # Convert patterns to directory names for simple matching
         # Handle patterns like "**/__pycache__", ".venv/**"
         excludes = set()
-        for pattern in pyright_excludes:
+        for pattern in pyright_patterns:
             # Strip glob patterns to get directory name
-            pattern = pattern.strip("/").strip("*")
+            pattern = pattern.strip()
+            pattern = pattern.strip("/")
+            pattern = pattern.strip("*")
             if pattern:
                 excludes.add(pattern)
 

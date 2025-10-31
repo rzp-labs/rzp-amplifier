@@ -50,6 +50,7 @@ dev = [
 ]
 
 [tool.pyright]
+
 venvPath = "."
 venv = ".venv"
 exclude = [
@@ -65,6 +66,11 @@ exclude = [
     ".data/**",
     "ai_working/**",
 ]
+ignore = [".venv", ".venv/**", ".cache", ".cache/**"]
 typeCheckingMode = "basic"
 reportMissingImports = false
 pythonVersion = "3.11"
+useLibraryCodeForTypes = false
+
+[tool.ruff]
+extend-exclude = [".venv"]

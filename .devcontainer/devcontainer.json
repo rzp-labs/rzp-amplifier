@@ -12,11 +12,11 @@
   // Features to add to the dev container. More info: https://containers.dev/features.
   "features": {
     "ghcr.io/jungaretti/features/make:1": {},
-    "ghcr.io/jungaretti/features/vim:1": {},
-    "ghcr.io/devcontainers-extra/features/pipx-package:1": {
-      "package": "uv",
-      "version": "latest"
-    },
+    "ghcr.io/jsburckhardt/devcontainer-features/uv:1": {},
+    // "ghcr.io/devcontainers-extra/features/pipx-package:1": {
+    //   "package": "uv",
+    //   "version": "latest"
+    // },
     "ghcr.io/devcontainers/features/node:1": {
       "nodeGypDependencies": true,
       "installYarnUsingApt": true,
@@ -25,15 +25,12 @@
       "pnpmVersion": "latest"
     },
     "ghcr.io/devcontainers/features/java:1": {
-    },
-    "ghcr.io/devcontainers/features/java:1": {
       "version": "21",
       "installMaven": false,
       "installGradle": false
     },
     "ghcr.io/anthropics/devcontainer-features/claude-code:1": {},
     "ghcr.io/devcontainers/features/sshd:1": {},
-    "ghcr.io/devcontainers/features/azure-cli:1": {},
     "ghcr.io/devcontainers/features/github-cli:1": {},
     "ghcr.io/devcontainers/features/docker-in-docker:2": {}
   },
@@ -52,7 +49,10 @@
   // with port-specific entries in 'portsAttributes'.
   // "otherPortsAttributes": {},
   // "updateContentCommand": "make -C ${containerWorkspaceFolder} install",
+  "onCreateCommand": "git submodule update --init --recursive",
   "postCreateCommand": "./.devcontainer/post-create.sh",
+  "postStartCommand": "git config --global submodule.recurse true",
+  "updateContentCommand": "git submodule update --init --recursive",
   "runArgs": ["--name=amplifier_devcontainer"],
   // Configure tool-specific properties.
   "customizations": {
