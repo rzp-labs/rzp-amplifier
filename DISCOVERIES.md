@@ -330,3 +330,96 @@ clean_prompt = isolate_prompt(user_prompt)
 - Use `parse_llm_json()` for all LLM JSON responses - never use raw `json.loads()`
 - Wrap LLM operations with `retry_with_feedback()` for automatic error recovery
 - Apply `isolate_prompt()` when user content might be confused with instructions
+
+## Path Dependencies Break GitHub Installation (2025-10-30)
+
+### Issue
+
+`uv tool update amplifier` fails with subdirectory error when libraries use path dependencies:
+
+```
+error: Failed to download and build `amplifier-collections @ git+https://github.com/microsoft/amplifier-profiles@main#subdirectory=../amplifier-collections`
+  Caused by: The source distribution has no subdirectory `../amplifier-collections`
+```
+
+Users could not install or update Amplifier from GitHub.
+
+### Root Cause
+
+**Path dependencies in library pyproject.toml files break GitHub installation**:
+
+```toml
+# amplifier-profiles/pyproject.toml
+[tool.uv.sources]
+amplifier-collections = { path = "../amplifier-collections" }  # ❌ BREAKS GITHUB
+```
+
+**Why this breaks**:
+1. Works perfectly in local development (directories are siblings)
+2. **Fails on GitHub installation** because:
+   - `uv` clones amplifier-profiles from GitHub
+   - Tries to resolve `path = "../amplifier-collections"`
+   - Fails: no `../amplifier-collections` relative to cloned repo
+
+**Violated AGENTS.md guidance**:
+> **Avoid path dependencies** in core packages - they break GitHub installation
+
+### Solution
+
+**Two-part fix**:
+
+**1. Change to git URL in library pyproject.toml**:
+
+```toml
+# amplifier-profiles/pyproject.toml
+[tool.uv.sources]
+amplifier-collections = { git = "https://github.com/microsoft/amplifier-collections", branch = "main" }  # ✅ WORKS
+```
+
+**2. Auto-reinstall libraries as editable in install-dev scripts**:
+
+```bash
+# install-dev.sh (at end, after all other installs)
+echo "Reinstalling libraries as editable..."
+cd amplifier-collections && uv pip install -e . --quiet && cd ..
+cd amplifier-profiles && uv pip install -e . --quiet && cd ..
+cd amplifier-module-resolution && uv pip install -e . --quiet && cd ..
+```
+
+**How it works now**:
+
+- **GitHub installation**: Git URLs resolve correctly ✅
+- **Local development**: Final reinstall step makes editable ✅
+
+### Key Learnings
+
+1. **Path dependencies are local-only**: Work in monorepos, break in distribution
+2. **AGENTS.md guidance exists for a reason**: "Avoid path dependencies in core packages"
+3. **Git URLs work everywhere**: Both GitHub install and local development (with reinstall)
+4. **Test from GitHub**: `uv tool install` from GitHub verifies distribution works
+5. **Automate workarounds**: Don't document manual steps, fix the scripts
+
+### Prevention
+
+**When creating library dependencies**:
+
+```toml
+# ❌ DON'T: Path dependency
+[tool.uv.sources]
+my-dependency = { path = "../my-dependency" }
+
+# ✅ DO: Git URL
+[tool.uv.sources]
+my-dependency = { git = "https://github.com/org/my-dependency", branch = "main" }
+```
+
+**When writing install scripts**:
+- Install from git URLs first (works for both local and GitHub)
+- Then reinstall specific libraries as editable for local dev
+- Test with `uv tool install` from GitHub, not just local installs
+
+**Verification checklist**:
+- [ ] No path dependencies in library pyproject.toml files
+- [ ] All dependencies use git URLs
+- [ ] Install scripts reinstall libraries as editable at end
+- [ ] Test `uv tool install git+https://github.com/...` succeeds
