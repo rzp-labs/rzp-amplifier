@@ -2,13 +2,11 @@
   "mcpServers": {
     "api-supermemory-ai": {
       "command": "npx",
-      "args": [
-        "-y",
-        "mcp-remote@latest",
-        "https://api.supermemory.ai/mcp",
-        "--header",
-        "x-sm-project:rzp-labs"
-      ]
+      "args": ["-y", "mcp-remote", "https://api.supermemory.ai/mcp"],
+      "env": {},
+      "headers": {
+        "Authorization": "${SUPERMEMORY_API_KEY}"
+      }
     },
     "browser-use": {
       "command": "uvx",

@@ -65,6 +65,9 @@ exclude = [
     "dist/**",
     ".data/**",
     "ai_working/**",
+    "tools/**",
+    "**/.cache/**",
+    "**/.git/modules/**",
 ]
 ignore = [".venv", ".venv/**", ".cache", ".cache/**"]
 typeCheckingMode = "basic"
