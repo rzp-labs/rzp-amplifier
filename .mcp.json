@@ -37,17 +37,6 @@
         "GEMINI_API_KEY": "${GEMINI_API_KEY}",
         "OPENROUTER_API_KEY": "${OPENROUTER_API_KEY}"
       }
-      ]
-    },
-    "api-supermemory-ai": {
-      "command": "npx",
-      "args": [
-        "-y",
-        "mcp-remote@latest",
-        "https://api.supermemory.ai/mcp",
-        "--header",
-        "x-sm-project:rzp-labs"
-      ]
     }
   }
 }

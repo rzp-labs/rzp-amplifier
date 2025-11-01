@@ -9,15 +9,9 @@
     ],
     "deny": [],
     "defaultMode": "bypassPermissions",
-    "additionalDirectories": [
-      ".data",
-      ".vscode",
-      ".claude",
-      ".ai"
-    ]
+    "additionalDirectories": [".data", ".vscode", ".claude", ".ai"]
   },
   "enableAllProjectMcpServers": true,
-  "enabledMcpjsonServers": ["browser-use", "deepwiki"],
   "statusLine": {
     "type": "command",
     "command": "bash $CLAUDE_PROJECT_DIR/.claude/tools/statusline-example.sh"
