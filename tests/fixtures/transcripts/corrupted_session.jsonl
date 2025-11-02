@@ -1,0 +1,3 @@
+{"role": "user", "content": "This is valid"}
+{this is not valid json
+{"role": "assistant", "content": "This line is valid but previous was not"}

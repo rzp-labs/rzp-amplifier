@@ -32,6 +32,7 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
+.claude/sessions/*
 
 #azd files
 .azure
@@ -44,6 +45,7 @@ logs
 
 # Test files
 .coverage
+htmlcov/
 
 # Working folders
 ai_working/tmp

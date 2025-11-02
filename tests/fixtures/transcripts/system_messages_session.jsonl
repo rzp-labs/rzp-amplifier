@@ -1,0 +1,7 @@
+{"role": "user", "content": "Real user message about Python async"}
+{"role": "assistant", "content": "PostToolUse: Running make check..."}
+{"role": "assistant", "content": "[HOOK] Pre-hook started"}
+{"role": "user", "content": "Hook completed successfully"}
+{"role": "assistant", "content": "Here's actual helpful content about async/await patterns"}
+{"role": "user", "content": "Extract key memories from this conversation"}
+{"role": "assistant", "content": "UNKNOWN:"}

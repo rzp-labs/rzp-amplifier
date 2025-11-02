@@ -1,0 +1,12 @@
+{
+  "plain_json": {
+    "key": "value",
+    "nested": {
+      "items": [1, 2, 3]
+    }
+  },
+  "markdown_wrapped": "```json\n{\n  \"key\": \"value\",\n  \"nested\": {\n    \"items\": [1, 2, 3]\n  }\n}\n```",
+  "with_preamble": "Here's the result:\n{\n  \"key\": \"value\"\n}",
+  "malformed": "{invalid json}",
+  "nested_in_text": "The analysis shows that {\"nested\": {\"key\": \"value\"}} is the structure."
+}

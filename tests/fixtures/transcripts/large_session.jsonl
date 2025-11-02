@@ -1,0 +1,22 @@
+{"role": "user", "content": "I need help with message 1"}
+{"role": "assistant", "content": "Here's help for message 1"}
+{"role": "user", "content": "I need help with message 2"}
+{"role": "assistant", "content": "Here's help for message 2"}
+{"role": "user", "content": "I need help with message 3"}
+{"role": "assistant", "content": "Here's help for message 3"}
+{"role": "user", "content": "I need help with message 4"}
+{"role": "assistant", "content": "Here's help for message 4"}
+{"role": "user", "content": "I need help with message 5"}
+{"role": "assistant", "content": "Here's help for message 5"}
+{"role": "user", "content": "I need help with message 6"}
+{"role": "assistant", "content": "Here's help for message 6"}
+{"role": "user", "content": "I need help with message 7"}
+{"role": "assistant", "content": "Here's help for message 7"}
+{"role": "user", "content": "I need help with message 8"}
+{"role": "assistant", "content": "Here's help for message 8"}
+{"role": "user", "content": "I need help with message 9"}
+{"role": "assistant", "content": "Here's help for message 9"}
+{"role": "user", "content": "I need help with message 10"}
+{"role": "assistant", "content": "Here's help for message 10"}
+{"role": "user", "content": "Let me make a technical decision: I'll use pytest fixtures for test data management"}
+{"role": "assistant", "content": "Good decision! Fixtures provide clean test isolation and reusability."}

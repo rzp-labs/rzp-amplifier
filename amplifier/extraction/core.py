@@ -295,18 +295,19 @@ Return ONLY valid JSON."""
                     return data
 
         except TimeoutError:
-            logger.warning(
+            logger.error(
                 f"[EXTRACTION] Claude Code SDK timed out after {self.config.memory_extraction_timeout} seconds"
             )
+            raise
         except json.JSONDecodeError as e:
             logger.error(f"[EXTRACTION] Failed to parse extraction response: {e}")
+            raise
         except Exception as e:
             logger.error(f"[EXTRACTION] Claude Code SDK extraction error: {e}")
             import traceback
 
             logger.error(f"[EXTRACTION] Traceback: {traceback.format_exc()}")
-
-        return None
+            raise
 
     def _is_system_message(self, content: str) -> bool:
         """Check if content is a system/hook message that should be filtered"""

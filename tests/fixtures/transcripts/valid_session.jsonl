@@ -1,0 +1,6 @@
+{"role": "user", "content": "How do I implement async timeout handling in Python?"}
+{"role": "assistant", "content": "You can use asyncio.timeout() context manager. Here's an example:\n\nasync with asyncio.timeout(30):\n    result = await some_operation()\n\nThis will raise TimeoutError if the operation takes longer than 30 seconds."}
+{"role": "user", "content": "That's helpful. I'll use that pattern in my memory extraction code."}
+{"role": "assistant", "content": "Great choice! Make sure to catch TimeoutError specifically and log it appropriately. You might also want to configure the timeout via environment variables for flexibility."}
+{"role": "user", "content": "I decided to use 120 seconds as the default timeout for memory extraction because the Claude SDK needs time to process conversations."}
+{"role": "assistant", "content": "That's a good decision. 120 seconds gives enough buffer for the SDK to process without making users wait too long. Document this in your config."}

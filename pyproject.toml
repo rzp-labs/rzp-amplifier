@@ -77,3 +77,28 @@ useLibraryCodeForTypes = false
 
 [tool.ruff]
 extend-exclude = [".venv"]
+
+[tool.coverage.run]
+source = ["amplifier", ".claude/tools"]
+omit = [
+    "*/tests/*",
+    "*/__pycache__/*",
+    "*/.venv/*",
+    "*/smoke_tests.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+show_missing = true
+skip_covered = false
+# Start conservative - currently at ~4.5%, increase as coverage improves
+fail_under = 4

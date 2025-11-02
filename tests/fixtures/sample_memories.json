@@ -1,0 +1,34 @@
+[
+  {
+    "id": "mem-1",
+    "timestamp": "2025-01-15T10:00:00",
+    "content": "Use 4.5:1 contrast ratio for accessibility",
+    "category": "design",
+    "metadata": {},
+    "accessed_count": 2
+  },
+  {
+    "id": "mem-2",
+    "timestamp": "2025-01-15T11:00:00",
+    "content": "Database choice: PostgreSQL for primary storage",
+    "category": "technical",
+    "metadata": {},
+    "accessed_count": 5
+  },
+  {
+    "id": "mem-3",
+    "timestamp": "2025-01-15T12:00:00",
+    "content": "Framework: Django for API endpoints",
+    "category": "technical",
+    "metadata": {},
+    "accessed_count": 3
+  },
+  {
+    "id": "mem-4",
+    "timestamp": "2025-01-15T13:00:00",
+    "content": "Prefer TypeScript over JavaScript for frontend",
+    "category": "preference",
+    "metadata": {},
+    "accessed_count": 1
+  }
+]

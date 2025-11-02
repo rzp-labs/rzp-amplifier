@@ -75,8 +75,9 @@ async def main():
         logger.info("Starting memory extraction")
         logger.cleanup_old_logs()  # Clean up old logs on each run
 
-        # Set a timeout for the entire operation to prevent hanging
-        async with asyncio.timeout(60):  # 60 second timeout for the whole hook
+        # Timeout must be longer than EXTRACTION_TIMEOUT_SECONDS (120s) + buffer (60s)
+        # to allow memory extraction to complete successfully
+        async with asyncio.timeout(180):  # Hook timeout: 180s (extraction: 120s + 60s buffer)
             # Read JSON input
             raw_input = sys.stdin.read()
             logger.info(f"Received input length: {len(raw_input)}")
@@ -261,11 +262,17 @@ async def main():
             session_id = input_data.get("session_id", "unknown")
             delegation_report = generate_delegation_report(session_id)
 
+            # Track extraction status
+            extraction_status = "success" if memories_count > 0 else "failed"
+            extraction_error = None
+
             # Build response
             output = {
                 "metadata": {
                     "memoriesExtracted": memories_count,
                     "source": "amplifier_extraction",
+                    "extractionStatus": extraction_status,
+                    "extractionError": extraction_error,
                     "delegationViolations": delegation_report is not None,
                 }
             }
@@ -281,13 +288,33 @@ async def main():
             json.dump(output, sys.stdout)
 
     except TimeoutError:
-        logger.error("Operation timed out after 60 seconds")
+        logger.error("Memory extraction timed out after 180 seconds")
+        extraction_error = "Extraction timeout (180s exceeded)"
         json.dump(
-            {"metadata": {"memoriesExtracted": 0, "source": "amplifier_extraction", "error": "timeout"}}, sys.stdout
+            {
+                "metadata": {
+                    "memoriesExtracted": 0,
+                    "extractionStatus": "timeout",
+                    "extractionError": extraction_error,
+                    "source": "amplifier_extraction",
+                }
+            },
+            sys.stdout,
         )
     except Exception as e:
-        logger.exception("Unexpected error during memory extraction", e)
-        json.dump({"metadata": {"memoriesExtracted": 0, "source": "amplifier_extraction"}}, sys.stdout)
+        logger.exception("Memory extraction failed with error")
+        extraction_error = str(e)
+        json.dump(
+            {
+                "metadata": {
+                    "memoriesExtracted": 0,
+                    "extractionStatus": "error",
+                    "extractionError": extraction_error,
+                    "source": "amplifier_extraction",
+                }
+            },
+            sys.stdout,
+        )
 
 
 if __name__ == "__main__":
