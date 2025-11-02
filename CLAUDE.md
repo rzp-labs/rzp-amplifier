@@ -203,6 +203,24 @@ Single message with multiple Task calls:
 - Learning and improving continuously
 - Maintaining alignment with user's approach
 
+## Workspace Architecture Awareness
+
+**Pure Delegation Model**: The amplifier workspace uses a Pure Delegation architecture where:
+
+- **Parent workspace** (`/workspaces/rzp-amplifier/`) delegates ALL operations to submodules without importing their code
+- **Submodules** (orchestrator/, infrastructure/) are truly standalone with own virtual environments
+- **No cross-imports**: Parent never imports from submodule packages (orchestrator.*, infrastructure.*)
+- **Makefile delegation**: `make check-all` and `make test-all` delegate to submodule Makefiles
+- **Hook-based detection**: Claude Code hooks detect which project was modified and run appropriate checks
+
+**What this means for you:**
+- When working on parent code: Use `make check` and `make test`
+- When working on submodule code: Hooks automatically run submodule checks, or use `make check-all`
+- Never suggest importing from orchestrator or infrastructure packages in parent code
+- Each project has isolated dependencies - check the specific project's pyproject.toml
+
+See [Recursive Workspace Architecture](docs/architecture/recursive_workspace.md) for complete details.
+
 ## Philosophical Anchors
 
 - Always reference `@ai_context/IMPLEMENTATION_PHILOSOPHY.md`

@@ -349,9 +349,10 @@ make transcript-restore             # Restore full lineage (for CLI use)
 
 ### 🏗️ Workspace Pattern for Serious Projects
 
-**For long-term development**, consider using the workspace pattern where Amplifier hosts your project as a git submodule. This architectural approach provides:
+**For long-term development**, consider using the workspace pattern where Amplifier hosts your project as a git submodule. This architectural approach uses **Pure Delegation** where each project remains fully independent:
 
 - **Clean boundaries** - Project files stay in project directory, Amplifier stays pristine and updatable
+- **True independence** - Each project has its own virtual environment, dependencies, and build system
 - **Version control isolation** - Each component maintains independent git history
 - **Context persistence** - AGENTS.md preserves project guidance across sessions
 - **Scalability** - Work on multiple projects simultaneously without interference
@@ -387,11 +388,22 @@ The pattern inverts the typical relationship: instead of your project containing
 
 ### ⚙️ Development Commands
 
+The workspace uses **Pure Delegation architecture** for clean separation between parent and submodule operations:
+
 ```bash
-make check            # Format, lint, type-check
-make test             # Run tests
+# Parent workspace only
+make check            # Format, lint, type-check parent code
+make test             # Run parent tests only
+
+# Recursive (parent + all submodules)
+make check-all        # Check parent + orchestrator + infrastructure
+make test-all         # Test parent + orchestrator + infrastructure
+
+# Other commands
 make ai-context-files # Rebuild AI context
 ```
+
+Each project runs with its own isolated virtual environment. See [Recursive Workspace Architecture](docs/architecture/recursive_workspace.md) for details.
 
 ### 🧪 Testing & Benchmarks
 

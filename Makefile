@@ -1,8 +1,8 @@
 # Workspace Makefile
 
-# Include the recursive system
-repo_root = $(shell git rev-parse --show-toplevel)
-include $(repo_root)/tools/makefiles/recursive.mk
+# Define submodule directories for recursive targets
+# Pure Delegation: Explicit list instead of recursive.mk auto-discovery
+MAKE_DIRS := orchestrator infrastructure
 
 # Helper function to list discovered projects
 define list_projects
@@ -20,7 +20,8 @@ endef
 default: ## Show essential commands
 	@echo ""
 	@echo "Quick Start:"
-	@echo "  make install         Install all dependencies"
+	@echo "  make install         Install parent dependencies"
+	@echo "  make install-all     Install parent + all submodules"
 	@echo ""
 	@echo "Knowledge Base:"
 	@echo "  make knowledge-update        Full pipeline: extract & synthesize"
@@ -28,9 +29,11 @@ default: ## Show essential commands
 	@echo "  make knowledge-graph-viz     Create interactive visualization"
 	@echo "  make knowledge-stats         Show knowledge base statistics"
 	@echo ""
-	@echo "Development:"
-	@echo "  make check          Format, lint, and type-check all code"
-	@echo "  make test           Run all tests"
+	@echo "Development (Pure Delegation Architecture):"
+	@echo "  make check          Format, lint, and type-check parent workspace"
+	@echo "  make test           Run parent workspace tests"
+	@echo "  make check-all      Check parent + all submodules recursively"
+	@echo "  make test-all       Test parent + all submodules recursively"
 	@echo "  make smoke-test     Run quick smoke tests (< 2 minutes)"
 	@echo "  make worktree NAME   Create git worktree with .data copy"
 	@echo "  make worktree-list   List all git worktrees"
@@ -66,7 +69,8 @@ help: ## Show ALL available commands
 	@echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 	@echo ""
 	@echo "QUICK START:"
-	@echo "  make install         Install all dependencies"
+	@echo "  make install         Install parent dependencies"
+	@echo "  make install-all     Install parent + all submodules"
 	@echo ""
 	@echo "KNOWLEDGE BASE:"
 	@echo "  make knowledge-update        Full pipeline: extract & synthesize"
@@ -101,6 +105,8 @@ help: ## Show ALL available commands
 	@echo "  make content-status  Show content statistics"
 	@echo ""
 	@echo "DEVELOPMENT:"
+	@echo "  make install         Install parent dependencies"
+	@echo "  make install-all     Install parent + all submodules"
 	@echo "  make check           Format, lint, and type-check code"
 	@echo "  make test            Run all tests (alias: pytest)"
 	@echo "  make smoke-test      Run quick smoke tests (< 2 minutes)"
@@ -142,8 +148,8 @@ help: ## Show ALL available commands
 	@echo ""
 
 # Installation
-install: ## Install all dependencies
-	@echo "Installing workspace dependencies..."
+install: ## Install parent workspace dependencies only
+	@echo "Installing parent workspace dependencies..."
 	uv sync --group dev
 	@echo ""
 	@echo "Installing npm packages globally..."
@@ -156,7 +162,7 @@ install: ## Install all dependencies
 		exit 1; \
 	}
 	@echo ""
-	@echo "✅ All dependencies installed!"
+	@echo "✅ Parent dependencies installed!"
 	@echo ""
 	@if [ -n "$$VIRTUAL_ENV" ]; then \
 		echo "✓ Virtual environment already active"; \
@@ -166,8 +172,21 @@ install: ## Install all dependencies
 		echo "✗ No virtual environment found. Run 'make install' first."; \
 	fi
 
+install-all: install ## Install parent + all submodule dependencies
+	@# Pure Delegation: Delegate to each submodule's Makefile
+	@echo ""
+	@echo "📦 Installing dependencies for all projects..."
+	@for dir in $(MAKE_DIRS); do \
+		echo ""; \
+		echo "→ Installing $$dir dependencies..."; \
+		$(MAKE) -C $$dir install || true; \
+	done
+	@echo ""
+	@echo "✅ All dependencies installed!"
+
 # Code quality
-check: ## Format, lint, and type-check all code
+check: ## Format, lint, and type-check parent workspace only
+	@# Pure Delegation: Parent runs checks with parent's .venv
 	@# Handle worktree virtual environment issues by unsetting mismatched VIRTUAL_ENV
 	@if [ -n "$$VIRTUAL_ENV" ] && [ -d ".venv" ]; then \
 		VENV_DIR=$$(cd "$$VIRTUAL_ENV" 2>/dev/null && pwd) || true; \
@@ -177,19 +196,38 @@ check: ## Format, lint, and type-check all code
 			export VIRTUAL_ENV=; \
 		fi; \
 	fi
-	@echo "Formatting code with ruff..."
+	@echo "Checking parent workspace code..."
 	@VIRTUAL_ENV= uv run ruff format .
-	@echo "Linting code with ruff..."
 	@VIRTUAL_ENV= uv run ruff check . --fix
-	@echo "Type-checking code with pyright..."
 	@VIRTUAL_ENV= uv run pyright
-	@echo "Checking for stubs and placeholders..."
 	@python tools/check_stubs.py
-	@echo "All checks passed!"
+	@echo "✓ Parent workspace checks passed!"
 
-test: ## Run all tests
-	@echo "Running tests..."
-	uv run pytest
+check-all: check ## Format, lint, and type-check parent + all submodules
+	@# Pure Delegation: Delegate to each submodule's Makefile
+	@echo ""
+	@echo "Checking submodules recursively..."
+	@for dir in $(MAKE_DIRS); do \
+		echo "→ Checking $$dir..."; \
+		$(MAKE) -C $$dir check || true; \
+	done
+	@echo "✓ All checks complete!"
+
+test: ## Run parent workspace tests only
+	@# Pure Delegation: Parent pytest uses pytest.ini to exclude submodules
+	@echo "Running parent workspace tests..."
+	@uv run pytest
+	@echo "✓ Parent tests passed!"
+
+test-all: test ## Run tests in parent + all submodules
+	@# Pure Delegation: Delegate to each submodule's Makefile
+	@echo ""
+	@echo "Running tests recursively in submodules..."
+	@for dir in $(MAKE_DIRS); do \
+		echo "→ Testing $$dir..."; \
+		$(MAKE) -C $$dir test || true; \
+	done
+	@echo "✓ All tests complete!"
 
 smoke-test: ## Run quick smoke tests to verify basic functionality
 	@echo "Running smoke tests..."

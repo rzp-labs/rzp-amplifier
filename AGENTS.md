@@ -305,13 +305,22 @@ Every function must work or not exist. Every file must be complete or not create
 
 ## Build/Test/Lint Commands
 
+The workspace uses **Pure Delegation architecture** for clean separation between parent and submodule operations:
+
+**Parent workspace only:**
 - Install dependencies: `make install` (uses uv)
 - Add new dependencies: `uv add package-name` (in the specific project directory)
 - Add development dependencies: `uv add --dev package-name`
-- Run all checks: `make check` (runs lint, format, type check)
-- Run all tests: `make test` or `make pytest`
+- Run all checks: `make check` (runs lint, format, type check on parent code only)
+- Run all tests: `make test` (runs parent tests only)
 - Run a single test: `uv run pytest tests/path/to/test_file.py::TestClass::test_function -v`
 - Upgrade dependency lock: `make lock-upgrade`
+
+**Recursive (parent + all submodules):**
+- Check all projects: `make check-all` (parent + orchestrator + infrastructure)
+- Test all projects: `make test-all` (parent + orchestrator + infrastructure)
+
+Each project runs with its own isolated virtual environment. See [Recursive Workspace Architecture](docs/architecture/recursive_workspace.md) for details.
 
 ## Dependency Management
 
@@ -371,18 +380,26 @@ When creating amplifier CLI tools:
 
 ## Testing Instructions
 
-- Run `make check` to run all checks including linting, formatting, and type checking.
-- Run `make test` to run the tests.
+**Pure Delegation Architecture**: The workspace delegates operations to submodules without importing their code.
+
+- Run `make check` to check parent workspace only (linting, formatting, type checking)
+- Run `make test` to test parent workspace only
+- Run `make check-all` to recursively check parent + all submodules
+- Run `make test-all` to recursively test parent + all submodules
+
+Each submodule (orchestrator, infrastructure) has its own virtual environment and runs independently.
 
 ## IMPORTANT: Service Testing After Code Changes
 
 After making code changes, you MUST:
 
-1. **Run `make check`** - This catches syntax, linting, and type errors
+1. **Run appropriate checks** - Use `make check` for parent code or `make check-all` for all projects
 2. **Start the affected service** - This catches runtime errors and invalid API usage
 3. **Test basic functionality** - Send a test request or verify the service starts cleanly
 4. **Stop the service** - Use Ctrl+C or kill the process
    - IMPORTANT: Always stop services you start to free up ports
+
+**Pure Delegation Note**: If modifying submodule code (orchestrator/, infrastructure/), the appropriate checks run automatically via Claude Code hooks or you can manually run `make -C <submodule>/ check` from the parent workspace.
 
 ### Common Runtime Errors Not Caught by `make check`
 

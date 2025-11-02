@@ -2,6 +2,73 @@
 
 This file documents non-obvious problems, solutions, and patterns discovered during development. Make sure these are regularly reviewed and updated, removing outdated entries or those replaced by better practices or code or tools, updating those where the best practice has evolved.
 
+## Recursive Workspace: Pure Delegation Architecture (2025-11-01)
+
+### Issue
+
+Running `make test` from parent workspace caused 6 ModuleNotFoundError failures. Tests were attempting to import from submodule packages (orchestrator.config, orchestrator.models, etc.) that aren't installed in the parent's virtual environment.
+
+### Root Cause
+
+Parent pytest was discovering submodule test files before Makefile delegation occurred. With submodules in the same directory tree, pytest's default discovery found `orchestrator/tests/` and `infrastructure/tests/`, then tried to import from those packages using parent's venv.
+
+**The problem**: Parent workspace doesn't have submodule packages installed (by design - they're standalone projects with own dependencies). But pytest discovery happened before the recursive delegation could activate the correct virtual environments.
+
+### Solution
+
+Implemented **Pure Delegation Architecture** with three-part fix:
+
+**1. pytest.ini exclusion** (controls discovery):
+```ini
+[pytest]
+testpaths = tests  # Only parent's tests/
+norecursedirs = orchestrator infrastructure ...
+```
+
+**2. Makefile separation** (clear scope):
+- `make check` / `make test` → Parent workspace only
+- `make check-all` / `make test-all` → Parent + all submodules recursively
+
+**3. Path-based hooks** (automatic delegation):
+```bash
+# .claude/hooks/post-tool-use.sh detects which project modified
+if echo "$MODIFIED_FILES" | grep -q "^orchestrator/"; then
+    make -C orchestrator/ check
+fi
+```
+
+### Key Learnings
+
+1. **Git submodules need architectural clarity**: Not just version control - requires explicit operational boundaries
+2. **pytest discovery is aggressive**: Will find tests in all subdirectories unless explicitly excluded
+3. **Virtual environment isolation**: Each project must use own venv, no shared dependencies
+4. **Delegation over imports**: Parent delegates operations rather than importing submodule code
+5. **Naming prevents confusion**: `-all` suffix makes recursive scope explicit
+
+### Why Pure Delegation Wins
+
+zen-architect evaluated three approaches and unanimously recommended Pure Delegation because:
+- **Philosophy aligned**: Embodies ruthless simplicity and modular design
+- **Leverages existing system**: recursive.mk already 90% working
+- **True independence**: Submodules remain standalone "bricks" with own venvs
+- **Scalable**: Can add any number of submodules with different tech stacks
+- **Clear boundaries**: No ambiguity about when to import vs delegate
+
+**Alternatives rejected**:
+- **Editable installs** (`pip install -e`): Violates standalone principle, creates dependency conflicts
+- **Hybrid approach**: Mixing patterns creates cognitive overhead and unclear rules
+
+### Prevention
+
+- Always exclude submodule directories in parent's pytest.ini: `norecursedirs = submodule1 submodule2`
+- Use clear naming: parent-only targets vs `-all` recursive targets
+- Document the delegation pattern in architecture docs
+- Use path-based hooks to detect and delegate automatically
+- Keep each project truly standalone: own venv, own dependencies, own Makefile
+- Never import from submodule packages in parent code
+
+**See also**: [Recursive Workspace Architecture](docs/architecture/recursive_workspace.md), [Decision Record 002](ai_working/decisions/002-pure-delegation-architecture.md)
+
 ## DevContainer Setup: Using Official Features Instead of Custom Scripts (2025-10-22)
 
 ### Issue
