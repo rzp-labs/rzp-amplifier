@@ -15,6 +15,7 @@ appsettings.*.json
 node_modules
 .venv
 __pycache__
+.mypy_cache
 .pytest_cache
 .ruff_cache
 .cache
