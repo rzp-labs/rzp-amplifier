@@ -1,21 +1,28 @@
-# Workspace Makefile
+# Workspace Makefile - Orchestrates modular components
 
-# Define submodule directories for recursive targets
-# Pure Delegation: Explicit list instead of recursive.mk auto-discovery
-MAKE_DIRS := orchestrator infrastructure
+#==============================================================================
+# CRITICAL: Include order matters
+#
+# 1. core.mk (foundation - MUST be first)
+# 2. delegation.mk (depends on core - MUST be second)
+# 3. All others (depend on core, some on delegation - any order)
+#
+# DO NOT change include order without reviewing dependencies
+#==============================================================================
 
-# Helper function to list discovered projects
-define list_projects
-	@echo "Projects discovered: $(words $(MAKE_DIRS))"
-	@for dir in $(MAKE_DIRS); do echo "  - $$dir"; done
-	@echo ""
-endef
+include tools/makefiles/core.mk
+include tools/makefiles/delegation.mk
+include tools/makefiles/install.mk
+include tools/makefiles/quality.mk
+include tools/makefiles/knowledge-extraction.mk
+include tools/makefiles/knowledge-synthesis.mk
+include tools/makefiles/worktree.mk
+include tools/makefiles/content-generation.mk
+include tools/makefiles/utilities.mk
 
-# Default goal - shows simple list
 .DEFAULT_GOAL := default
 
-# Main targets
-.PHONY: default help install dev test check
+.PHONY: default help verify-modules
 
 default: ## Show essential commands
 	@echo ""
