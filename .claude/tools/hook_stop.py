@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/workspaces/rzp-amplifier/.venv/bin/python3
 """
 Claude Code hook for Stop/SubagentStop events - minimal wrapper for memory extraction.
 Reads JSON from stdin, calls amplifier modules, writes JSON to stdout.
@@ -21,6 +21,7 @@ logger = HookLogger("stop_hook")
 try:
     from amplifier.extraction import MemoryExtractor
     from amplifier.memory import MemoryStore
+    from amplifier.orchestration import DelegationAudit
 except ImportError as e:
     logger.error(f"Failed to import amplifier modules: {e}")
     # Exit gracefully to not break hook chain
@@ -28,11 +29,39 @@ except ImportError as e:
     sys.exit(0)
 
 
+def generate_delegation_report(session_id: str) -> str | None:
+    """Generate delegation boundary violation report if violations exist.
+
+    Returns:
+        Report string if violations found, None if clean session
+    """
+    try:
+        audit = DelegationAudit(session_id)
+        result = audit.validate_session()
+
+        if result["status"] == "clean":
+            return None
+
+        return audit.report()
+
+    except Exception as e:
+        logger.error(f"Failed to generate delegation report: {e}")
+        return None
+
+
 async def main():
     """Read input, extract memories, store and return count"""
     try:
-        # Check if memory system is enabled
+        # Load .env file to get environment variables
         import os
+
+        from dotenv import load_dotenv
+
+        # Load .env from repository root (3 levels up from this script)
+        env_path = Path(__file__).parent.parent.parent / ".env"
+        load_dotenv(dotenv_path=env_path)
+
+        # Check if memory system is enabled
 
         memory_enabled = os.getenv("MEMORY_SYSTEM_ENABLED", "false").lower() in ["true", "1", "yes"]
         if not memory_enabled:
@@ -228,13 +257,25 @@ async def main():
             else:
                 logger.warning("No memories extracted")
 
+            # Generate delegation boundary report
+            session_id = input_data.get("session_id", "unknown")
+            delegation_report = generate_delegation_report(session_id)
+
             # Build response
             output = {
                 "metadata": {
                     "memoriesExtracted": memories_count,
                     "source": "amplifier_extraction",
+                    "delegationViolations": delegation_report is not None,
                 }
             }
+
+            if delegation_report:
+                logger.info("Delegation boundary violations detected")
+                logger.info(delegation_report)
+                output["metadata"]["delegationReport"] = delegation_report
+            else:
+                logger.info("Clean session - all modifications properly delegated")
 
             logger.info(f"Returning output: {json.dumps(output)}")
             json.dump(output, sys.stdout)

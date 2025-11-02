@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/workspaces/rzp-amplifier/.venv/bin/python3
 """
 Claude Code hook for session start - minimal wrapper for memory retrieval.
 Reads JSON from stdin, calls amplifier modules, writes JSON to stdout.
@@ -31,8 +31,16 @@ except ImportError as e:
 async def main():
     """Read input, search memories, return context"""
     try:
-        # Check if memory system is enabled
+        # Load .env file to get environment variables
         import os
+
+        from dotenv import load_dotenv
+
+        # Load .env from repository root (3 levels up from this script)
+        env_path = Path(__file__).parent.parent.parent / ".env"
+        load_dotenv(dotenv_path=env_path)
+
+        # Check if memory system is enabled
 
         memory_enabled = os.getenv("MEMORY_SYSTEM_ENABLED", "false").lower() in ["true", "1", "yes"]
         if not memory_enabled:

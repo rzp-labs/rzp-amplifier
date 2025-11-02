@@ -18,6 +18,18 @@ logger = logging.getLogger(__name__)
 MAX_MEMORIES = 1000
 
 
+def _get_default_data_dir() -> Path:
+    """Get default data directory from config, falling back to .data if config unavailable"""
+    try:
+        from amplifier.extraction.config import get_config
+
+        config = get_config()
+        return config.memory_storage_dir
+    except Exception as e:
+        logger.warning(f"Could not load config, using fallback .data directory: {e}")
+        return Path(".data")
+
+
 class MemoryStore:
     """JSON-based memory storage with rotation and compatibility"""
 
@@ -25,10 +37,10 @@ class MemoryStore:
         """Initialize memory store
 
         Args:
-            data_dir: Directory for data storage, defaults to .data
+            data_dir: Directory for data storage, defaults to configured memory_storage_dir
             max_memories: Maximum number of memories to keep
         """
-        self.data_dir = data_dir or Path(".data")
+        self.data_dir = data_dir or _get_default_data_dir()
         self.data_file = self.data_dir / "memory.json"
         self.max_memories = max_memories
 

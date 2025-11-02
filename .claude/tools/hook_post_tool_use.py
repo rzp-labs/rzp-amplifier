@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/workspaces/rzp-amplifier/.venv/bin/python3
 """
 Claude Code hook for PostToolUse events - minimal wrapper for claim validation.
 Reads JSON from stdin, calls amplifier modules, writes JSON to stdout.
@@ -20,6 +20,7 @@ logger = HookLogger("post_tool_use")
 
 try:
     from amplifier.memory import MemoryStore
+    from amplifier.orchestration import DelegationAudit
     from amplifier.validation import ClaimValidator
 except ImportError as e:
     logger.error(f"Failed to import amplifier modules: {e}")
@@ -28,11 +29,96 @@ except ImportError as e:
     sys.exit(0)
 
 
+def detect_agent_session() -> bool:
+    """Determine if this is an agent session or main orchestrator.
+
+    Agents are spawned via Task tool, so check for markers:
+    - Environment variable set by Task spawning
+    - Session context metadata
+    """
+    import os
+
+    # Method 1: Check session metadata
+    session_context = os.getenv("CLAUDE_SESSION_CONTEXT", "")
+    if "agent:" in session_context:
+        return True
+
+    # Method 2: Check if Task tool was used in parent chain
+    parent_tools = os.getenv("CLAUDE_PARENT_TOOLS", "").split(",")
+    return "Task" in parent_tools
+
+
+def validate_orchestrator_boundary(tool_name: str, tool_input: dict, session_id: str | None = None) -> dict:
+    """Enforce main orchestrator cannot modify files directly.
+
+    Phase 2: Validation (log warnings, don't block yet)
+    Phase 3: Enforcement (will block violations)
+    """
+    # Modification tools that require delegation
+    modification_tools = {"Edit", "Write", "MultiEdit", "NotebookEdit"}
+
+    if tool_name not in modification_tools:
+        return {"status": "allowed"}
+
+    if detect_agent_session():
+        return {"status": "allowed"}  # Agents can modify
+
+    # Main orchestrator attempting modification
+    file_path = tool_input.get("file_path", "unknown")
+
+    # Record violation in audit log if session_id provided
+    if session_id:
+        try:
+            audit = DelegationAudit(session_id)
+            audit.record_modification(file_path, tool_name, "main")
+        except Exception as e:
+            logger.error(f"Failed to record delegation audit: {e}")
+
+    violation_msg = f"""
+⚠️  ORCHESTRATOR BOUNDARY VIOLATION (Phase 2: Validation)
+
+Main Claude attempted to use {tool_name} on: {file_path}
+
+Your Role: Orchestrator
+  ✅ Allowed: Read, Grep, TodoWrite, Task, Bash, AskUserQuestion
+  ❌ Blocked: Edit, Write, MultiEdit (must delegate via Task)
+
+Required Action: Use Task tool to delegate to specialized agent
+
+Available Agents:
+  • modular-builder: Code implementation and module creation
+  • bug-hunter: Bug diagnosis and fix implementation
+  • test-coverage: Test creation and coverage
+  • refactor-architect: Code refactoring
+
+Example Delegation:
+  Task: modular-builder
+  Prompt: "Implement fix for {file_path}: [specification]"
+
+Phase 2: This is a WARNING only. Logging violation.
+Phase 3: Will BLOCK this operation completely.
+    """.strip()
+
+    logger.warning(violation_msg)
+
+    # Phase 2: Allow but warn
+    # Phase 3: Will return error and block
+    return {"status": "warning", "message": violation_msg, "file": file_path, "tool": tool_name}
+
+
 async def main():
     """Read input, validate claims, return warnings if contradictions found"""
     try:
-        # Check if memory system is enabled
+        # Load .env file to get environment variables
         import os
+
+        from dotenv import load_dotenv
+
+        # Load .env from repository root (3 levels up from this script)
+        env_path = Path(__file__).parent.parent.parent / ".env"
+        load_dotenv(dotenv_path=env_path)
+
+        # Check if memory system is enabled
 
         memory_enabled = os.getenv("MEMORY_SYSTEM_ENABLED", "false").lower() in ["true", "1", "yes"]
         if not memory_enabled:
@@ -41,7 +127,7 @@ async def main():
             json.dump({}, sys.stdout)
             return
 
-        logger.info("Starting claim validation")
+        logger.info("Starting post-tool-use validation")
         logger.cleanup_old_logs()  # Clean up old logs on each run
 
         # Read JSON input
@@ -50,7 +136,19 @@ async def main():
 
         input_data = json.loads(raw_input)
 
-        # Extract message
+        # Extract tool information for boundary validation
+        tool_name = input_data.get("tool_name", "")
+        tool_input = input_data.get("tool_input", {})
+        session_id = input_data.get("session_id")
+
+        # Validate orchestrator boundary (Phase 2: warnings only)
+        if tool_name:
+            boundary_result = validate_orchestrator_boundary(tool_name, tool_input, session_id)
+            if boundary_result["status"] == "warning":
+                # In Phase 2, we log the warning but don't block
+                logger.warning(f"Boundary violation detected: {tool_name} on {boundary_result.get('file', 'unknown')}")
+
+        # Extract message for claim validation
         message = input_data.get("message", {})
         role = message.get("role", "")
         content = message.get("content", "")
