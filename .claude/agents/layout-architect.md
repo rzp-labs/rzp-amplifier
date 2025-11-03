@@ -13,7 +13,7 @@ description: |
   - Screen-level structure
 
   Owns the Space dimension (Nine Dimensions #4) at the page/view level.
-model: inherit
+model: claude-haiku-4-5
 keywords: [layout, information-architecture, IA, grid, structure, hierarchy, navigation, sitemap, flow, composition, page-structure, sidebar, header, footer, main]
 priority: component-level
 ---

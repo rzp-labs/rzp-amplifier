@@ -13,7 +13,7 @@ description: |
   - Brand expression in design
 
   Owns the Style dimension (Nine Dimensions #1) at the strategic level.
-model: inherit
+model: claude-opus-4-1
 keywords: [art-direction, aesthetic, visual-strategy, brand, personality, feel, vibe, visual-language, cohesion, visual-identity, style]
 priority: system-level
 ---

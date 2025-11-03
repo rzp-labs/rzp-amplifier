@@ -13,7 +13,7 @@ description: |
   - Variant design and props API
 
   This agent works at the component level, not system architecture.
-model: inherit
+model: claude-opus-4-1
 keywords: [component, button, modal, form, card, input, dropdown, toast, menu, dialog, navigation, header, footer, sidebar]
 priority: component-level
 ---

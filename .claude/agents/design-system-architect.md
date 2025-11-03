@@ -14,7 +14,7 @@ description: |
   - Cross-cutting design concerns
 
   This agent operates at the system level, not individual components.
-model: inherit
+model: claude-opus-4-1
 keywords: [system, tokens, foundation, architecture, palette, scale, grid, spacing-system, dark-mode, theme, design-system]
 priority: system-level
 ---

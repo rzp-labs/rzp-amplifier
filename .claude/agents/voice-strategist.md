@@ -13,7 +13,7 @@ description: |
   - Content guidelines for developers
 
   Owns the Voice dimension (Nine Dimensions #3).
-model: inherit
+model: claude-sonnet-4-5
 keywords: [voice, tone, copy, writing, ux-writing, microcopy, messaging, error-message, help-text, empty-state, label, placeholder]
 priority: refinement-level
 ---

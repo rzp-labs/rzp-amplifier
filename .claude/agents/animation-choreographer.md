@@ -14,7 +14,7 @@ description: |
   - Accessibility considerations for motion
 
   Remember: Animation is communication, not decoration.
-model: inherit
+model: claude-opus-4-1
 keywords: [animate, animation, motion, transition, choreography, timing, easing, sequence, stagger, reveal, draw-in, fade]
 priority: behavioral-level
 ---

@@ -13,7 +13,7 @@ description: |
   - Fluid typography and spacing
 
   Handles web modalities (desktop, tablet, mobile).
-model: inherit
+model: claude-haiku-4-5
 keywords: [responsive, breakpoint, mobile, tablet, desktop, device, viewport, touch, mobile-first, adaptive, fluid]
 priority: system-level
 ---
