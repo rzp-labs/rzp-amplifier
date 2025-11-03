@@ -20,7 +20,7 @@
   "githubPullRequests.defaultMergeMethod": "squash",
 
   // === PYTHON CONFIGURATION ===
-  "python.analysis.ignore": ["output", "logs", "ai_context", "ai_working"],
+  // "python.analysis.ignore": ["output", "logs", "ai_context", "ai_working"],
   "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
   "python.terminal.activateEnvironment": true,
   "python.analysis.autoFormatStrings": true,
@@ -28,11 +28,11 @@
   "python.analysis.diagnosticMode": "workspace",
   "python.analysis.fixAll": ["source.unusedImports"],
   "python.analysis.inlayHints.functionReturnTypes": true,
-  "python.analysis.typeCheckingMode": "standard",
-  "python.analysis.autoSearchPaths": true,
+  // "python.analysis.typeCheckingMode": "standard",
+  // "python.analysis.autoSearchPaths": true,
 
   // Workspace-specific Python paths
-  "python.analysis.extraPaths": [],
+  // "python.analysis.extraPaths": [],
 
   // === PYTHON FORMATTING ===
   "[python]": {
@@ -118,6 +118,7 @@
     "ai_working"
   ],
   "cSpell.words": [
+    "ansigreen",
     "apollographql",
     "charliermarsh",
     "codegen",

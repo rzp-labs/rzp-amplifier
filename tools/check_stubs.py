@@ -111,6 +111,20 @@ def is_legitimate_pattern(filepath, line_num, line):
         except Exception:
             pass
 
+    # Minimal exception classes (valid Python pattern)
+    if "pass" in line and line.strip() == "pass":
+        try:
+            with open(filepath, encoding="utf-8") as f:
+                lines = f.readlines()
+                # Look backwards for class definition inheriting from Exception
+                # Check up to 20 lines back (some exception classes have long docstrings)
+                for i in range(max(0, line_num - 20), line_num):
+                    if "class" in lines[i] and "Error" in lines[i] and ("Exception" in lines[i] or "Error" in lines[i]):
+                        # This is a minimal exception class - legitimate pattern
+                        return True
+        except Exception:
+            pass
+
     # Intentional exception silencing patterns
     if re.search(r"except.*:\s*pass", line):
         # This could be legitimate graceful degradation
