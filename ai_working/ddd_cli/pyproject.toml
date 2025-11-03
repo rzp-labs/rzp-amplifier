@@ -1,0 +1,43 @@
+[project]
+name = "amplifier-ddd"
+version = "0.1.0"
+description = "CLI utilities for Document-Driven Development Phase 2"
+requires-python = ">=3.11"
+dependencies = [
+    "click>=8.1.0",
+    "gitpython>=3.1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=3.0.0",
+    "ruff>=0.1.0",
+    "pyright>=1.1.0",
+]
+
+[project.scripts]
+amplifier-ddd = "amplifier_ddd.cli:ddd_cli"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["amplifier_ddd"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP", "RUF", "SIM", "RET"]
+
+[tool.pyright]
+pythonVersion = "3.11"
+typeCheckingMode = "basic"
+
+[dependency-groups]
+dev = [
+    "pytest-cov>=7.0.0",
+]
