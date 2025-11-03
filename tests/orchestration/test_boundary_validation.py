@@ -20,11 +20,18 @@ def detect_agent_session_impl() -> bool:
 
 
 def validate_orchestrator_boundary_impl(tool_name: str, tool_input: dict) -> dict:
-    """Implementation of boundary validation logic (mirroring hook logic)."""
+    """Implementation of boundary validation logic (mirroring hook logic).
+
+    Phase 3: Returns 'error' status for violations, blocking operations.
+    """
     modification_tools = {"Edit", "Write", "MultiEdit", "NotebookEdit"}
 
     if tool_name not in modification_tools:
         return {"status": "allowed"}
+
+    # Emergency bypass check
+    if os.getenv("AMPLIFIER_BYPASS_BOUNDARY") == "true":
+        return {"status": "allowed", "bypassed": True}
 
     if detect_agent_session_impl():
         return {"status": "allowed"}
@@ -32,7 +39,8 @@ def validate_orchestrator_boundary_impl(tool_name: str, tool_input: dict) -> dic
     file_path = tool_input.get("file_path", "unknown")
     violation_msg = f"Main Claude attempted to use {tool_name} on: {file_path}"
 
-    return {"status": "warning", "message": violation_msg, "file": file_path, "tool": tool_name}
+    # Phase 3: Return error status to block operations
+    return {"status": "error", "message": violation_msg, "file": file_path, "tool": tool_name}
 
 
 class TestDetectAgentSession:
@@ -113,42 +121,57 @@ class TestValidateOrchestratorBoundary:
             result = validate_orchestrator_boundary_impl("NotebookEdit", {"notebook_path": "notebook.ipynb"})
             assert result["status"] == "allowed"
 
-    def test_main_edit_triggers_warning(self):
-        """Main Claude using Edit should trigger warning."""
+    def test_main_edit_triggers_error(self):
+        """Main Claude using Edit should trigger error (Phase 3)."""
         with mock.patch.dict(os.environ, {}, clear=True):
             result = validate_orchestrator_boundary_impl("Edit", {"file_path": "test.py"})
-            assert result["status"] == "warning"
+            assert result["status"] == "error"
             assert result["file"] == "test.py"
             assert result["tool"] == "Edit"
             assert "Main Claude attempted" in result["message"]
 
-    def test_main_write_triggers_warning(self):
-        """Main Claude using Write should trigger warning."""
+    def test_main_write_triggers_error(self):
+        """Main Claude using Write should trigger error (Phase 3)."""
         with mock.patch.dict(os.environ, {}, clear=True):
             result = validate_orchestrator_boundary_impl("Write", {"file_path": "new.py"})
-            assert result["status"] == "warning"
+            assert result["status"] == "error"
             assert result["file"] == "new.py"
             assert result["tool"] == "Write"
 
-    def test_main_multiedit_triggers_warning(self):
-        """Main Claude using MultiEdit should trigger warning."""
+    def test_main_multiedit_triggers_error(self):
+        """Main Claude using MultiEdit should trigger error (Phase 3)."""
         with mock.patch.dict(os.environ, {}, clear=True):
             result = validate_orchestrator_boundary_impl("MultiEdit", {"file_path": "code.py"})
-            assert result["status"] == "warning"
+            assert result["status"] == "error"
             assert result["tool"] == "MultiEdit"
 
-    def test_main_notebookedit_triggers_warning(self):
-        """Main Claude using NotebookEdit should trigger warning."""
+    def test_main_notebookedit_triggers_error(self):
+        """Main Claude using NotebookEdit should trigger error (Phase 3)."""
         with mock.patch.dict(os.environ, {}, clear=True):
             result = validate_orchestrator_boundary_impl("NotebookEdit", {"notebook_path": "notebook.ipynb"})
-            assert result["status"] == "warning"
+            assert result["status"] == "error"
             assert result["tool"] == "NotebookEdit"
+
+    def test_emergency_bypass_allows_operations(self):
+        """Emergency bypass allows operations with AMPLIFIER_BYPASS_BOUNDARY=true."""
+        with mock.patch.dict(os.environ, {"AMPLIFIER_BYPASS_BOUNDARY": "true"}, clear=True):
+            result = validate_orchestrator_boundary_impl("Edit", {"file_path": "test.py"})
+            assert result["status"] == "allowed"
+            assert result.get("bypassed") is True
+
+    def test_bypass_requires_exact_true_value(self):
+        """Emergency bypass only works with exact 'true' value."""
+        # Should NOT bypass with other values
+        for bypass_value in ["1", "yes", "True", "TRUE", ""]:
+            with mock.patch.dict(os.environ, {"AMPLIFIER_BYPASS_BOUNDARY": bypass_value}, clear=True):
+                result = validate_orchestrator_boundary_impl("Edit", {"file_path": "test.py"})
+                assert result["status"] == "error", f"Bypass incorrectly activated for value: {bypass_value}"
 
     def test_unknown_file_path(self):
         """Handles missing file_path gracefully."""
         with mock.patch.dict(os.environ, {}, clear=True):
             result = validate_orchestrator_boundary_impl("Edit", {})
-            assert result["status"] == "warning"
+            assert result["status"] == "error"
             assert result["file"] == "unknown"
 
 
@@ -166,9 +189,9 @@ class TestIntegrationScenarios:
             grep_result = validate_orchestrator_boundary_impl("Grep", {"pattern": "def main"})
             assert grep_result["status"] == "allowed"
 
-            # Main cannot edit directly
+            # Main cannot edit directly (Phase 3: blocked)
             edit_result = validate_orchestrator_boundary_impl("Edit", {"file_path": "src/app.py"})
-            assert edit_result["status"] == "warning"
+            assert edit_result["status"] == "error"
 
     def test_scenario_agent_full_permissions(self):
         """Agents have full file modification permissions."""
@@ -186,23 +209,23 @@ class TestIntegrationScenarios:
             assert write_result["status"] == "allowed"
 
     def test_scenario_multiple_violations(self):
-        """Multiple violations are each detected."""
+        """Multiple violations are each detected (Phase 3: errors)."""
         with mock.patch.dict(os.environ, {}, clear=True):
             violations = []
 
             # First violation
             result1 = validate_orchestrator_boundary_impl("Edit", {"file_path": "file1.py"})
-            if result1["status"] == "warning":
+            if result1["status"] == "error":
                 violations.append(result1)
 
             # Second violation
             result2 = validate_orchestrator_boundary_impl("Write", {"file_path": "file2.py"})
-            if result2["status"] == "warning":
+            if result2["status"] == "error":
                 violations.append(result2)
 
             # Third violation
             result3 = validate_orchestrator_boundary_impl("MultiEdit", {"file_path": "file3.py"})
-            if result3["status"] == "warning":
+            if result3["status"] == "error":
                 violations.append(result3)
 
             assert len(violations) == 3
@@ -211,15 +234,15 @@ class TestIntegrationScenarios:
             assert violations[2]["file"] == "file3.py"
 
     def test_scenario_mixed_operations(self):
-        """Mixed allowed and blocked operations work correctly."""
+        """Mixed allowed and blocked operations work correctly (Phase 3)."""
         with mock.patch.dict(os.environ, {}, clear=True):
             operations = [
                 ("Read", {"file_path": "test.py"}, "allowed"),
-                ("Edit", {"file_path": "test.py"}, "warning"),
+                ("Edit", {"file_path": "test.py"}, "error"),
                 ("Grep", {"pattern": "test"}, "allowed"),
-                ("Write", {"file_path": "new.py"}, "warning"),
+                ("Write", {"file_path": "new.py"}, "error"),
                 ("Bash", {"command": "ls"}, "allowed"),
-                ("MultiEdit", {"file_path": "code.py"}, "warning"),
+                ("MultiEdit", {"file_path": "code.py"}, "error"),
             ]
 
             for tool_name, tool_input, expected_status in operations:

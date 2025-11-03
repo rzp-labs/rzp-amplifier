@@ -86,8 +86,8 @@ class TestHookBoundaryValidation:
         if "warning" in output:
             assert "BOUNDARY VIOLATION" not in output["warning"]
 
-    def test_hook_detects_main_edit_violation(self, hook_script, sample_event_edit_main, tmp_path, monkeypatch):
-        """Hook detects when main Claude uses Edit tool."""
+    def test_hook_blocks_main_edit_violation(self, hook_script, sample_event_edit_main, tmp_path, monkeypatch):
+        """Hook blocks when main Claude uses Edit tool (Phase 3)."""
         monkeypatch.chdir(tmp_path)
 
         # Set environment - main orchestrator (no agent markers)
@@ -95,6 +95,7 @@ class TestHookBoundaryValidation:
         env["MEMORY_SYSTEM_ENABLED"] = "true"
         env.pop("CLAUDE_SESSION_CONTEXT", None)
         env.pop("CLAUDE_PARENT_TOOLS", None)
+        env.pop("AMPLIFIER_BYPASS_BOUNDARY", None)  # Ensure bypass not set
 
         # Run hook
         result = subprocess.run(
@@ -105,10 +106,20 @@ class TestHookBoundaryValidation:
             env=env,
         )
 
+        # Hook should complete successfully but return error to Claude
         assert result.returncode == 0
 
-        # Check logs for violation warning
-        assert "BOUNDARY VIOLATION" in result.stderr or "boundary violation" in result.stderr.lower()
+        # Parse JSON output
+        output = json.loads(result.stdout) if result.stdout else {}
+
+        # Should contain error blocking the operation
+        assert "error" in output
+        assert "BLOCKED" in output["error"]
+        assert "metadata" in output
+        assert output["metadata"]["violationType"] == "orchestrator_boundary"
+
+        # Should also log the blocking
+        assert "BLOCKING" in result.stderr or "BLOCKED" in result.stderr
 
     def test_hook_allows_agent_edit(self, hook_script, sample_event_edit_agent, tmp_path, monkeypatch):
         """Hook allows Edit tool when used by agent."""
@@ -142,6 +153,7 @@ class TestHookBoundaryValidation:
         env["MEMORY_SYSTEM_ENABLED"] = "true"
         env.pop("CLAUDE_SESSION_CONTEXT", None)
         env.pop("CLAUDE_PARENT_TOOLS", None)
+        env.pop("AMPLIFIER_BYPASS_BOUNDARY", None)
 
         # Run hook
         subprocess.run(
@@ -164,6 +176,63 @@ class TestHookBoundaryValidation:
 
             assert len(records) >= 1
             assert any(r["source"] == "main" for r in records)
+
+    def test_hook_bypass_allows_operation(self, hook_script, sample_event_edit_main, tmp_path, monkeypatch):
+        """Emergency bypass allows operations when AMPLIFIER_BYPASS_BOUNDARY=true."""
+        monkeypatch.chdir(tmp_path)
+
+        # Set environment with bypass enabled
+        env = os.environ.copy()
+        env["MEMORY_SYSTEM_ENABLED"] = "true"
+        env["AMPLIFIER_BYPASS_BOUNDARY"] = "true"
+        env.pop("CLAUDE_SESSION_CONTEXT", None)
+        env.pop("CLAUDE_PARENT_TOOLS", None)
+
+        # Run hook
+        result = subprocess.run(
+            [str(hook_script)],
+            input=json.dumps(sample_event_edit_main),
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+
+        assert result.returncode == 0
+
+        # Should NOT contain error (operation allowed)
+        output = json.loads(result.stdout) if result.stdout else {}
+        assert "error" not in output
+
+        # Should log bypass warning
+        assert "BYPASS" in result.stderr.upper()
+
+    def test_error_json_format(self, hook_script, sample_event_edit_main, tmp_path, monkeypatch):
+        """Error JSON has correct structure for Claude Code."""
+        monkeypatch.chdir(tmp_path)
+
+        env = os.environ.copy()
+        env["MEMORY_SYSTEM_ENABLED"] = "true"
+        env.pop("CLAUDE_SESSION_CONTEXT", None)
+        env.pop("CLAUDE_PARENT_TOOLS", None)
+        env.pop("AMPLIFIER_BYPASS_BOUNDARY", None)
+
+        result = subprocess.run(
+            [str(hook_script)],
+            input=json.dumps(sample_event_edit_main),
+            capture_output=True,
+            text=True,
+            env=env,
+        )
+
+        output = json.loads(result.stdout)
+
+        # Required error structure
+        assert "error" in output
+        assert "metadata" in output
+        assert output["metadata"]["violationType"] == "orchestrator_boundary"
+        assert output["metadata"]["source"] == "amplifier_boundary_enforcement"
+        assert "tool" in output["metadata"]
+        assert "file" in output["metadata"]
 
     def test_hook_graceful_degradation(self, hook_script, tmp_path, monkeypatch):
         """Hook exits gracefully when memory system disabled."""
@@ -210,29 +279,33 @@ class TestHookBoundaryValidation:
 class TestBoundaryValidationMessages:
     """Test the warning messages produced by boundary validation."""
 
-    def test_warning_message_format(self):
-        """Warning messages include all required information."""
+    def test_error_message_format(self):
+        """Error messages include all required information (Phase 3)."""
         # Simulate what hook produces
         tool_name = "Edit"
         file_path = "src/app.py"
 
-        warning_template = f"""
-⚠️  ORCHESTRATOR BOUNDARY VIOLATION (Phase 2: Validation)
+        error_template = f"""
+🚫 ORCHESTRATOR BOUNDARY VIOLATION - OPERATION BLOCKED
 
 Main Claude attempted to use {tool_name} on: {file_path}
 
-Your Role: Orchestrator
+Your Role: Orchestrator (read-only, delegation-focused)
   ✅ Allowed: Read, Grep, TodoWrite, Task, Bash, AskUserQuestion
-  ❌ Blocked: Edit, Write, MultiEdit (must delegate via Task)
+  ❌ BLOCKED: Edit, Write, MultiEdit (must delegate via Task)
 
 Required Action: Use Task tool to delegate to specialized agent
+
+Phase 3: This operation has been BLOCKED.
         """.strip()
 
-        assert "ORCHESTRATOR BOUNDARY VIOLATION" in warning_template
-        assert tool_name in warning_template
-        assert file_path in warning_template
-        assert "Task tool" in warning_template
-        assert "Phase 2" in warning_template
+        assert "ORCHESTRATOR BOUNDARY VIOLATION" in error_template
+        assert "OPERATION BLOCKED" in error_template
+        assert tool_name in error_template
+        assert file_path in error_template
+        assert "Task tool" in error_template
+        assert "Phase 3" in error_template
+        assert "BLOCKED" in error_template
 
     def test_warning_lists_allowed_tools(self):
         """Warning includes list of allowed tools."""
@@ -268,39 +341,43 @@ Available Agents:
             assert agent in warning
 
 
-class TestPhase2Behavior:
-    """Test Phase 2 (validation) vs Phase 3 (enforcement) behavior."""
+class TestPhase3Behavior:
+    """Test Phase 3 (enforcement) behavior - ACTIVE."""
 
-    def test_phase2_logs_warning_but_allows(self):
-        """Phase 2 logs warnings but doesn't block operations."""
-        # This test documents expected Phase 2 behavior
-        # In Phase 2: status="warning", operation proceeds
-        # In Phase 3: status="error", operation blocked
-
-        phase2_result = {"status": "warning", "message": "Violation detected", "file": "test.py", "tool": "Edit"}
-
-        assert phase2_result["status"] == "warning"
-        assert "message" in phase2_result
-
-        # Phase 2 allows operation to proceed (doesn't throw error)
-        # Hook returns warning but doesn't exit with error code
-
-    def test_phase3_will_block_operations(self):
-        """Phase 3 will block operations completely (future behavior)."""
-        # This test documents expected Phase 3 behavior (not implemented yet)
-        # When Phase 3 is enabled:
-        # - status will be "error" instead of "warning"
-        # - Hook will return non-zero exit code
-        # - Claude will receive error preventing tool execution
+    def test_phase3_blocks_operations(self):
+        """Phase 3 blocks operations completely (ACTIVE behavior)."""
+        # Phase 3 is now ACTIVE (activated 2025-11-03)
+        # status="error" instead of "warning"
+        # Hook returns error JSON to Claude Code
+        # Operations are blocked
 
         phase3_result = {"status": "error", "message": "Operation blocked", "file": "test.py", "tool": "Edit"}
 
         assert phase3_result["status"] == "error"
 
-        # In Phase 3, hook should:
-        # 1. Log error
-        # 2. Return error response
-        # 3. Exit with error code to prevent tool execution
+        # In Phase 3, hook:
+        # 1. Logs error
+        # 2. Returns error JSON to stdout
+        # 3. Exits with 0 (successful hook execution), but with error payload
+
+    def test_phase2_was_warning_only(self):
+        """Phase 2 logged warnings but didn't block (HISTORICAL behavior)."""
+        # This documents historical Phase 2 behavior (pre-2025-11-03)
+        # In Phase 2: status="warning", operation proceeded
+        # Hook returned warning but allowed operation
+
+        # This is for documentation only - Phase 2 is no longer active
+        phase2_result = {"status": "warning", "message": "Violation detected", "file": "test.py", "tool": "Edit"}
+
+        assert phase2_result["status"] == "warning"
+        assert "message" in phase2_result
+
+    def test_phase3_emergency_bypass(self):
+        """Phase 3 respects emergency bypass flag."""
+        bypass_result = {"status": "allowed", "bypassed": True}
+
+        assert bypass_result["status"] == "allowed"
+        assert bypass_result.get("bypassed") is True
 
 
 class TestAuditFileFormat:

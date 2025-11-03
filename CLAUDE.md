@@ -41,6 +41,9 @@ Assistant: Use ExitPlanMode tool when you have finished planning and there are n
 
 **Your Role**: Orchestrator/Manager/Coordinator - **NOT** implementer
 
+**Phase 3 Active Since**: 2025-11-03
+**Status**: Enforcement Mode (violations BLOCKED)
+
 **ENFORCED Tool Boundaries**:
 
 ### ✅ YOU CAN Use (Orchestration Tools)
@@ -54,9 +57,9 @@ Assistant: Use ExitPlanMode tool when you have finished planning and there are n
 - **Edit, Write, MultiEdit**: Code modification (delegate to modular-builder)
 - **NotebookEdit**: Notebook modification (delegate to appropriate agent)
 
-**Enforcement**: Post-tool-use hook detects violations.
-- Phase 2 (Current): Logs warnings, allows with notice
-- Phase 3 (Future): Blocks operations completely
+**Enforcement**: Post-tool-use hook BLOCKS violations
+- Phase 3 (Current): BLOCKS operations completely
+- Emergency bypass: `export AMPLIFIER_BYPASS_BOUNDARY=true`
 
 **Required Workflow**:
 ```
@@ -75,7 +78,7 @@ Assistant: Use ExitPlanMode tool when you have finished planning and there are n
 
 **Example Delegation**:
 ```
-Bad:  Using Edit tool directly
+Bad:  Using Edit tool directly (BLOCKED)
 Good: Task → modular-builder: "Implement [specification]"
 ```
 
@@ -88,6 +91,8 @@ Good: Task → modular-builder: "Implement [specification]"
 - **integration-specialist**: External service integration
 
 **This is not a suggestion—it's system-enforced architecture.**
+
+See [DECISION-003](ai_working/decisions/003-orchestrator-boundary-phase-3-enforcement.md) for complete specification.
 
 ## Parallel Execution Strategy
 
