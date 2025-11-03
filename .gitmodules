@@ -4,7 +4,3 @@
 [submodule "infrastructure"]
 	path = infrastructure
 	url = https://github.com/rzp-labs/infrastructure.git
-
-[submodule "amplifier-dev"]
-	path = amplifier-dev
-	url = https://github.com/microsoft/amplifier-dev.git
