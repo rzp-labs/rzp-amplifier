@@ -57,9 +57,7 @@ Assistant: Use ExitPlanMode tool when you have finished planning and there are n
 - **Edit, Write, MultiEdit**: Code modification (delegate to modular-builder)
 - **NotebookEdit**: Notebook modification (delegate to appropriate agent)
 
-**Enforcement**: Post-tool-use hook BLOCKS violations
-- Phase 3 (Current): BLOCKS operations completely
-- Emergency bypass: `export AMPLIFIER_BYPASS_BOUNDARY=true`
+**Enforcement**: PreToolUse hooks BLOCK Edit/Write/MultiEdit operations before execution. You will see a clear error message explaining how to delegate properly.
 
 **Required Workflow**:
 ```
@@ -78,8 +76,8 @@ Assistant: Use ExitPlanMode tool when you have finished planning and there are n
 
 **Example Delegation**:
 ```
-Bad:  Using Edit tool directly (BLOCKED)
-Good: Task → modular-builder: "Implement [specification]"
+Good:  Task → modular-builder: "Implement [specification]"
+Bad:   Using Edit tool directly (BLOCKED)
 ```
 
 **Available Specialized Agents**:

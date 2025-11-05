@@ -1,11 +1,9 @@
 #!/workspaces/rzp-amplifier/.venv/bin/python3
 """
-Claude Code hook for PostToolUse events - validates claims and enforces boundaries.
+Claude Code hook for PostToolUse events - validates claims and detects boundary violations.
 
-Phase 3 (Active): Blocks orchestrator boundary violations
-- Main orchestrator: Read-only, delegates via Task
-- Agents: Full Edit/Write capabilities
-- Emergency bypass: AMPLIFIER_BYPASS_BOUNDARY=true
+Detects orchestrator boundary violations and provides feedback for learning.
+Enforcement is via system prompt (CLAUDE.md), not blocking.
 """
 
 import asyncio
@@ -24,7 +22,6 @@ logger = HookLogger("post_tool_use")
 
 try:
     from amplifier.memory import MemoryStore
-    from amplifier.orchestration import DelegationAudit
     from amplifier.validation import ClaimValidator
 except ImportError as e:
     logger.error(f"Failed to import amplifier modules: {e}")
@@ -33,89 +30,23 @@ except ImportError as e:
     sys.exit(0)
 
 
-def detect_agent_session() -> bool:
-    """Determine if this is an agent session or main orchestrator.
+def validate_orchestrator_boundary(tool_name: str, tool_input: dict) -> dict:
+    """Detect orchestrator boundary violations for feedback.
 
-    Agents are spawned via Task tool, so check for markers:
-    - Environment variable set by Task spawning
-    - Session context metadata
+    System prompt enforcement - this only provides feedback for learning.
     """
-    import os
-
-    # Method 1: Check session metadata
-    session_context = os.getenv("CLAUDE_SESSION_CONTEXT", "")
-    if "agent:" in session_context:
-        return True
-
-    # Method 2: Check if Task tool was used in parent chain
-    parent_tools = os.getenv("CLAUDE_PARENT_TOOLS", "").split(",")
-    return "Task" in parent_tools
-
-
-def validate_orchestrator_boundary(tool_name: str, tool_input: dict, session_id: str | None = None) -> dict:
-    """Enforce main orchestrator cannot modify files directly.
-
-    Phase 3: Enforcement (blocks violations unless bypassed)
-    """
-    import os
-
-    # Emergency bypass for critical situations
-    if os.getenv("AMPLIFIER_BYPASS_BOUNDARY") == "true":
-        logger.warning("⚠️ BOUNDARY ENFORCEMENT BYPASSED via environment variable")
-        logger.warning("This should only be used for emergencies or debugging")
-        return {"status": "allowed", "bypassed": True}
-
-    # Modification tools that require delegation
+    # Modification tools that should be delegated
     modification_tools = {"Edit", "Write", "MultiEdit", "NotebookEdit"}
 
     if tool_name not in modification_tools:
         return {"status": "allowed"}
 
-    if detect_agent_session():
-        return {"status": "allowed"}  # Agents can modify
-
-    # Main orchestrator attempting modification
+    # Violation detected - provide feedback
     file_path = tool_input.get("file_path", "unknown")
 
-    # Record violation in audit log if session_id provided
-    if session_id:
-        try:
-            audit = DelegationAudit(session_id)
-            audit.record_modification(file_path, tool_name, "main")
-        except Exception as e:
-            logger.error(f"Failed to record delegation audit: {e}")
+    logger.warning(f"⚠️ BOUNDARY VIOLATION: {tool_name} on {file_path}")
 
-    violation_msg = f"""
-🚫 ORCHESTRATOR BOUNDARY VIOLATION - OPERATION BLOCKED
-
-Main Claude attempted to use {tool_name} on: {file_path}
-
-Your Role: Orchestrator (read-only, delegation-focused)
-  ✅ Allowed: Read, Grep, TodoWrite, Task, Bash, AskUserQuestion
-  ❌ BLOCKED: Edit, Write, MultiEdit (must delegate via Task)
-
-Required Action: Use Task tool to delegate to specialized agent
-
-Available Agents:
-  • modular-builder: Code implementation and module creation
-  • bug-hunter: Bug diagnosis and fix implementation
-  • test-coverage: Test creation and coverage
-  • refactor-architect: Code refactoring
-
-Example Delegation:
-  Task: modular-builder
-  Prompt: "Implement fix for {file_path}: [specification]"
-
-Emergency Bypass (use only when detection is incorrect):
-  export AMPLIFIER_BYPASS_BOUNDARY=true
-
-Phase 3: This operation has been BLOCKED.
-    """.strip()
-
-    logger.error(f"🚫 BLOCKING {tool_name} on {file_path} - orchestrator boundary violation")
-
-    # Phase 3: Block violations
-    return {"status": "error", "message": violation_msg, "file": file_path, "tool": tool_name}
+    return {"status": "warning", "file": file_path, "tool": tool_name}
 
 
 async def main():
@@ -148,30 +79,20 @@ async def main():
 
         input_data = json.loads(raw_input)
 
-        # Extract tool information for boundary validation
+        # Extract tool information for boundary detection
         tool_name = input_data.get("tool_name", "")
         tool_input = input_data.get("tool_input", {})
-        session_id = input_data.get("session_id")
 
-        # Validate orchestrator boundary (Phase 3: enforcement mode)
+        # Detect orchestrator boundary violations (provides feedback only)
         if tool_name:
-            boundary_result = validate_orchestrator_boundary(tool_name, tool_input, session_id)
+            boundary_result = validate_orchestrator_boundary(tool_name, tool_input)
 
-            if boundary_result["status"] == "error":
-                # Phase 3: Return error to Claude Code, blocking the operation
-                error_output = {
-                    "error": boundary_result["message"],
-                    "metadata": {
-                        "violationType": "orchestrator_boundary",
-                        "tool": boundary_result.get("tool"),
-                        "file": boundary_result.get("file"),
-                        "bypassed": boundary_result.get("bypassed", False),
-                        "source": "amplifier_boundary_enforcement",
-                    },
-                }
-                json.dump(error_output, sys.stdout)
-                logger.error(f"🚫 BLOCKED {tool_name} on {boundary_result.get('file', 'unknown')}")
-                return  # Exit hook, operation blocked
+            if boundary_result["status"] == "warning":
+                # Log violation for feedback - enforcement is via system prompt
+                logger.warning(
+                    f"⚠️ BOUNDARY VIOLATION DETECTED: {tool_name} on {boundary_result.get('file', 'unknown')}"
+                )
+                logger.warning("Reminder: Delegate file modifications via Task tool to specialized agents")
 
         # Extract message for claim validation
         message = input_data.get("message", {})
