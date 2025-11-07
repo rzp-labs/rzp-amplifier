@@ -13,6 +13,7 @@ Exit codes:
 import json
 import os
 import sys
+from pathlib import Path
 
 
 def main() -> None:
@@ -20,7 +21,7 @@ def main() -> None:
     try:
         # Read JSON input from stdin
         input_data = json.load(sys.stdin)
-        tool_name = input_data.get("tool_name", "")
+        tool_name = input_data.get("tool_name") or input_data.get("toolName", "")
 
         # Emergency bypass
         if os.getenv("AMPLIFIER_BYPASS_BOUNDARY", "").lower() == "true":
@@ -35,9 +36,12 @@ def main() -> None:
             allow_silent()
             return
 
-        # Check if this is an agent session (agents can use implementation tools)
-        agent_name = os.getenv("CLAUDE_AGENT_NAME", "")
-        if agent_name:
+        # Check if an agent is active (agents can use implementation tools)
+        # Agent state is managed by PreToolUse:Task (creates flag) and SubagentStop (removes flag)
+        agent_state_file = (
+            Path(os.environ.get("CLAUDE_PROJECT_DIR", os.getcwd())) / ".claude" / "state" / "agent_active"
+        )
+        if agent_state_file.exists():
             allow_silent()
             return
 

@@ -14,6 +14,23 @@ try:
 except ImportError:
     paths = None  # type: ignore
 
+# File for debugging hook execution
+DEBUG_LOG = Path("/workspaces/rzp-amplifier/.claude/logs/subagent-logger-debug.log")
+
+
+def debug_log(message: str) -> None:
+    """Write debug message to both stderr and file."""
+    timestamp = datetime.now().isoformat()
+    msg = f"[{timestamp}] {message}\n"
+    # Write to stderr
+    print(message, file=sys.stderr)
+    # Also write to file for persistent debugging
+    try:
+        with open(DEBUG_LOG, "a") as f:
+            f.write(msg)
+    except Exception:
+        pass  # Don't fail if we can't write debug log
+
 
 def ensure_log_directory() -> Path:
     """Ensure the log directory exists and return its path."""
@@ -104,23 +121,69 @@ def update_summary(log_dir: Path, log_entry: dict[str, Any]) -> None:
         json.dump(summary_to_save, f, indent=2)
 
 
+def create_agent_state_flag() -> None:
+    """Create state flag indicating an agent is active (disables boundary enforcement)."""
+    debug_log("DEBUG: create_agent_state_flag() called")
+    try:
+        project_root = Path(os.environ.get("CLAUDE_PROJECT_DIR", os.getcwd()))
+        debug_log(f"DEBUG: project_root = {project_root}")
+
+        state_dir = project_root / ".claude" / "state"
+        debug_log(f"DEBUG: state_dir = {state_dir}")
+
+        state_dir.mkdir(parents=True, exist_ok=True)
+        debug_log("DEBUG: state_dir created/exists")
+
+        flag_file = state_dir / "agent_active"
+        debug_log(f"DEBUG: Creating flag at {flag_file}")
+
+        flag_file.touch(exist_ok=True)
+        debug_log(f"DEBUG: Flag created successfully. Exists: {flag_file.exists()}")
+    except Exception as e:
+        # Don't fail on state flag errors
+        debug_log(f"ERROR: Failed to create agent state flag: {e}")
+        import traceback
+
+        debug_log(traceback.format_exc())
+
+
 def main() -> NoReturn:
+    debug_log("=" * 80)
+    debug_log("DEBUG: Hook starting")
     try:
         data = json.load(sys.stdin)
+        debug_log(f"DEBUG: Parsed JSON input. tool_name={data.get('tool_name')}")
     except json.JSONDecodeError as e:
-        # Silently fail to not disrupt Claude's workflow
-        print(f"Warning: Could not parse JSON input: {e}", file=sys.stderr)
+        # On JSON error, still return valid hook output
+        debug_log(f"Warning: Could not parse JSON input: {e}")
+        output = {"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "allow"}}
+        print(json.dumps(output))
         sys.exit(0)
 
     # Only process if this is a Task tool for subagents
     if data.get("hook_event_name") == "PreToolUse" and data.get("tool_name") == "Task":
+        debug_log("DEBUG: Task tool detected, processing...")
         try:
+            # Log the subagent usage
             log_subagent_usage(data)
+            debug_log("DEBUG: Logged subagent usage")
+
+            # Create state flag to disable boundary enforcement for agent
+            create_agent_state_flag()
+            debug_log("DEBUG: Created state flag")
         except Exception as e:
             # Log error but don't block Claude's operation
-            print(f"Warning: Failed to log subagent usage: {e}", file=sys.stderr)
+            debug_log(f"ERROR: Failed to log subagent usage: {e}")
+            import traceback
 
-    # Always exit successfully to not block Claude's workflow
+            debug_log(traceback.format_exc())
+    else:
+        debug_log(f"DEBUG: Not a Task tool (event={data.get('hook_event_name')}, tool={data.get('tool_name')})")
+
+    # CRITICAL: PreToolUse hooks MUST return JSON output
+    output = {"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "allow"}}
+    print(json.dumps(output))
+    debug_log("DEBUG: Hook complete")
     sys.exit(0)
 
 

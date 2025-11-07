@@ -1,12 +1,24 @@
 # [DECISION-003] Orchestrator Boundary System - PreToolUse Hook Enforcement
 
-**Date**: 2025-11-02 (Revised 2025-11-05 - Corrected with PreToolUse)
-**Status**: Active
+**Date**: 2025-11-02 (Revised 2025-11-06 - Superseded)
+**Status**: Superseded by [DECISION-004] PostToolUse Warning Approach
 **Depends On**: [DECISION-002] Pure Delegation Architecture
 
 ## Summary
 
 The orchestrator boundary is enforced through **PreToolUse hooks** that block Edit/Write/MultiEdit/NotebookEdit operations in the main orchestrator session, requiring delegation to specialized agents via the Task tool.
+
+## ⚠️ SUPERSEDED
+
+This decision has been superseded by [DECISION-004] PostToolUse Warning Approach.
+
+**Reason**: PreToolUse blocking hooks caused JavaScript heap exhaustion crashes. System now uses PostToolUse warnings instead of blocking.
+
+**See**: `ai_working/decisions/004-post-tool-use-warnings.md` for current implementation.
+
+The content below documents the PreToolUse blocking approach that was attempted but proved unstable.
+
+---
 
 ### Correction from Previous Versions
 
@@ -359,13 +371,13 @@ Result: ✅ Bypass works
 
 ## Review Triggers
 
-This decision should be reconsidered if:
+This decision is now **superseded**. Original review triggers documented for historical context:
 
-- [ ] **Agent detection unreliable**: CLAUDE_AGENT_NAME not consistently set
-- [ ] **Too restrictive**: Legitimate orchestrator operations blocked
-- [ ] **Performance issues**: Hook adds noticeable latency
-- [ ] **Architectural change**: Orchestrator boundary model evolves
-- [ ] **After 6 months**: General review of effectiveness
+- [x] **Agent detection unreliable**: CLAUDE_AGENT_NAME doesn't exist (2025-11-06)
+- [x] **Crashes**: JavaScript heap exhaustion with PreToolUse blocking (2025-11-06)
+- [x] **Architectural change**: Moved to PostToolUse warnings (2025-11-06)
+
+Current approach: See [DECISION-004]
 
 ## References
 
@@ -410,3 +422,35 @@ This decision went through three phases as we learned about Claude Code's hook a
 Read the documentation carefully. Claude Code has sophisticated hook capabilities including pre-execution blocking. The mistake was assuming only PostToolUse hooks existed without checking for PreToolUse in the reference docs.
 
 **Always verify assumptions against official documentation.**
+
+### Phase 4: State Flag Detection (2025-11-06)
+
+**Discovery**: `CLAUDE_AGENT_NAME` environment variable doesn't exist
+- Agents run in SAME session as orchestrator
+- No environment variable differentiation possible
+- Diagnostic logging revealed session_id is identical
+
+**Solution Attempted**: Hook-based state flag lifecycle
+- PreToolUse:Task creates `.claude/state/agent_active`
+- Boundary hook checks flag existence
+- SubagentStop removes flag after completion
+
+**Critical Fix**: PreToolUse hooks MUST return JSON
+- Missing JSON output caused JavaScript heap exhaustion crashes
+- Claude Code retries infinitely waiting for JSON response
+
+**Outcome**: State flag lifecycle worked correctly but blocking approach caused crashes.
+
+### Phase 5: PostToolUse Warnings (2025-11-06)
+
+**Problem**: Even with state flags, PreToolUse blocking caused instability
+- JavaScript heap exhaustion crashes persisted
+- Blocking approach too aggressive for hook system
+
+**Final Solution**: [DECISION-004] PostToolUse Warning Approach
+- Removed PreToolUse blocking entirely
+- Switched to PostToolUse informational warnings
+- System stable without crashes
+- Guidance through messages rather than enforcement
+
+**See**: `ai_working/decisions/004-post-tool-use-warnings.md`
