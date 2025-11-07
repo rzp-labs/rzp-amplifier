@@ -83,6 +83,8 @@ exclude = [
     "dist/**",
     ".data/**",
     "ai_working/**",
+    "infrastructure/**",
+    "orchestrator/**",
     "tools/**",
     "**/.cache/**",
     "**/.git/modules/**",
@@ -95,7 +97,7 @@ pythonVersion = "3.11"
 useLibraryCodeForTypes = false
 
 [tool.ruff]
-extend-exclude = [".venv"]
+extend-exclude = [".venv", "infrastructure", "orchestrator"]
 
 [tool.coverage.run]
 source = ["amplifier", ".claude/tools"]
