@@ -5,16 +5,20 @@ Reads JSON from stdin, calls amplifier modules, writes JSON to stdout.
 """
 
 import asyncio
+import importlib
 import json
+import os
 import sys
 from pathlib import Path
 
-# Add amplifier to path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+REPO_ROOT = Path(__file__).parent.parent.parent
+TOOLS_DIR = Path(__file__).parent
 
-# Import logger from the same directory
-sys.path.insert(0, str(Path(__file__).parent))
-from hook_logger import HookLogger
+# Add amplifier to path
+sys.path.insert(0, str(REPO_ROOT))
+sys.path.insert(0, str(TOOLS_DIR))
+
+HookLogger = importlib.import_module("hook_logger").HookLogger
 
 logger = HookLogger("session_start")
 
@@ -32,18 +36,14 @@ async def main():
     """Read input, search memories, return context"""
     try:
         # Load .env file to get environment variables
-        import os
-
         try:
-            import importlib
-
             load_dotenv = importlib.import_module("dotenv").load_dotenv
         except ModuleNotFoundError:
             load_dotenv = None
             logger.warning("python-dotenv not installed; skipping .env loading")
 
         # Load .env from repository root (3 levels up from this script)
-        env_path = Path(__file__).parent.parent.parent / ".env"
+        env_path = REPO_ROOT / ".env"
         if load_dotenv is not None:
             load_dotenv(dotenv_path=env_path)
         elif env_path.exists():

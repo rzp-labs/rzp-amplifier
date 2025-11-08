@@ -1,9 +1,7 @@
-#!/workspaces/rzp-amplifier/.venv/bin/python3
+#!/usr/bin/env python3
 """
-Claude Code hook for PostToolUse events - validates claims and detects boundary violations.
-
-Detects orchestrator boundary violations and provides feedback for learning.
-Enforcement is via system prompt (CLAUDE.md), not blocking.
+Claude Code hook for PostToolUse events - minimal wrapper for claim validation.
+Reads JSON from stdin, calls amplifier modules, writes JSON to stdout.
 """
 
 import asyncio
@@ -30,47 +28,11 @@ except ImportError as e:
     sys.exit(0)
 
 
-def validate_orchestrator_boundary(tool_name: str, tool_input: dict) -> dict:
-    """Detect orchestrator boundary violations for feedback.
-
-    System prompt enforcement - this only provides feedback for learning.
-    """
-    # Modification tools that should be delegated
-    modification_tools = {"Edit", "Write", "MultiEdit", "NotebookEdit"}
-
-    if tool_name not in modification_tools:
-        return {"status": "allowed"}
-
-    # Violation detected - provide feedback
-    file_path = tool_input.get("file_path", "unknown")
-
-    logger.warning(f"⚠️ BOUNDARY VIOLATION: {tool_name} on {file_path}")
-
-    return {"status": "warning", "file": file_path, "tool": tool_name}
-
-
 async def main():
     """Read input, validate claims, return warnings if contradictions found"""
     try:
-        # Load .env file to get environment variables
-        import os
-
-        try:
-            import importlib
-
-            load_dotenv = importlib.import_module("dotenv").load_dotenv
-        except ModuleNotFoundError:
-            load_dotenv = None
-            logger.warning("python-dotenv not installed; skipping .env loading")
-
-        # Load .env from repository root (3 levels up from this script)
-        env_path = Path(__file__).parent.parent.parent / ".env"
-        if load_dotenv is not None:
-            load_dotenv(dotenv_path=env_path)
-        elif env_path.exists():
-            logger.warning(".env file present but python-dotenv missing; environment variables may not load")
-
         # Check if memory system is enabled
+        import os
 
         memory_enabled = os.getenv("MEMORY_SYSTEM_ENABLED", "false").lower() in ["true", "1", "yes"]
         if not memory_enabled:
@@ -79,7 +41,7 @@ async def main():
             json.dump({}, sys.stdout)
             return
 
-        logger.info("Starting post-tool-use validation")
+        logger.info("Starting claim validation")
         logger.cleanup_old_logs()  # Clean up old logs on each run
 
         # Read JSON input
@@ -88,22 +50,7 @@ async def main():
 
         input_data = json.loads(raw_input)
 
-        # Extract tool information for boundary detection
-        tool_name = input_data.get("tool_name", "")
-        tool_input = input_data.get("tool_input", {})
-
-        # Detect orchestrator boundary violations (provides feedback only)
-        if tool_name:
-            boundary_result = validate_orchestrator_boundary(tool_name, tool_input)
-
-            if boundary_result["status"] == "warning":
-                # Log violation for feedback - enforcement is via system prompt
-                logger.warning(
-                    f"⚠️ BOUNDARY VIOLATION DETECTED: {tool_name} on {boundary_result.get('file', 'unknown')}"
-                )
-                logger.warning("Reminder: Delegate file modifications via Task tool to specialized agents")
-
-        # Extract message for claim validation
+        # Extract message
         message = input_data.get("message", {})
         role = message.get("role", "")
         content = message.get("content", "")
