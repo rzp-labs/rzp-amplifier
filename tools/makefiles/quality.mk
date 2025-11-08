@@ -26,8 +26,8 @@ check: ## Format, lint, and type-check parent workspace only
 	@echo "Checking parent workspace code..."
 	@VIRTUAL_ENV= uv run ruff format .
 	@VIRTUAL_ENV= uv run ruff check . --fix
-	@VIRTUAL_ENV= uv run pyright
-	@python tools/check_stubs.py
+	@VIRTUAL_ENV= uv run pyright . .claude/tools  # explicit path so Pyright ignores config exclusion
+	@VIRTUAL_ENV= uv run python tools/check_stubs.py
 	@echo "✓ Parent workspace checks passed!"
 
 check-all: check ## Format, lint, and type-check parent + all submodules

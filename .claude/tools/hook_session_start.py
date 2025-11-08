@@ -34,11 +34,20 @@ async def main():
         # Load .env file to get environment variables
         import os
 
-        from dotenv import load_dotenv
+        try:
+            import importlib
+
+            load_dotenv = importlib.import_module("dotenv").load_dotenv
+        except ModuleNotFoundError:
+            load_dotenv = None
+            logger.warning("python-dotenv not installed; skipping .env loading")
 
         # Load .env from repository root (3 levels up from this script)
         env_path = Path(__file__).parent.parent.parent / ".env"
-        load_dotenv(dotenv_path=env_path)
+        if load_dotenv is not None:
+            load_dotenv(dotenv_path=env_path)
+        elif env_path.exists():
+            logger.warning(".env file present but python-dotenv missing; environment variables may not load")
 
         # Check if memory system is enabled
 
