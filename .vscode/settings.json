@@ -173,5 +173,10 @@
     "venv",
     "Worktree"
   ],
-  "makefile.configureOnOpen": false
+  "makefile.configureOnOpen": false,
+  "ansible.python.activationScript": "",
+  "ansible.validation.lint.path": "/home/admin/rzp-amplifier/infrastructure/.venv/bin/ansible-lint",
+  "editor.defaultFormatter": null,
+  "ansible.python.interpreterPath": "/home/admin/rzp-amplifier/infrastructure/.venv/bin/python",
+  "ansible.ansible.path": "/home/admin/rzp-amplifier/infrastructure/.venv/bin/ansible"
 }

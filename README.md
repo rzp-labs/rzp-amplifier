@@ -318,6 +318,30 @@ See the [Worktree Guide](docs/WORKTREE_GUIDE.md) for advanced features, such as 
 
 - _View the documentation:_ [Worktree Guide](docs/WORKTREE_GUIDE.md)
 
+### 🔄 Multi-Machine Sync (Optional)
+
+**Why use this?** Develop across multiple machines (laptop, desktop, etc.) while keeping `.gitignored` files (secrets, configs, `.env`) synchronized via a remote server.
+
+```bash
+# Configure sync with your remote server (in .env)
+AMPLIFIER_SYNC_REMOTE=user@your-server.example.com:/path/to/project
+
+# Verify setup
+make sync-setup
+
+# Pull latest from remote before starting work
+make sync-pull
+
+# Push changes to remote when done
+make sync-push
+```
+
+**Use case**: You're working on a project across a Mac Mini and MacBook Pro. Git handles source code, but secrets and config files are `.gitignored`. Instead of manually copying files or accidentally committing secrets, use sync to keep everything in sync through a remote server.
+
+- _Tell Claude Code:_ `Help me set up bidirectional sync`
+
+- _View the documentation:_ [Sync Guide](docs/SYNC.md)
+
 ### 📊 Enhanced Status Line
 
 See costs, model, and session info at a glance:

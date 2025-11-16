@@ -35,6 +35,9 @@ install: ## Install parent workspace dependencies only
 	else \
 		echo "✗ No virtual environment found. Run 'make install' first."; \
 	fi
+	@echo ""
+	@echo "ℹ️  Optional: Configure bidirectional sync for multi-machine development"
+	@echo "   Run 'make sync-setup' for details or see .env.example"
 
 install-all: install ## Install parent + all submodule dependencies
 	@# Pure Delegation: Delegate to each submodule's Makefile

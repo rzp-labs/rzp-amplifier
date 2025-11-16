@@ -18,6 +18,7 @@ include tools/makefiles/knowledge-extraction.mk
 include tools/makefiles/knowledge-synthesis.mk
 include tools/makefiles/worktree.mk
 include tools/makefiles/content-generation.mk
+include tools/makefiles/sync.mk
 include tools/makefiles/utilities.mk
 
 .DEFAULT_GOAL := default
@@ -63,6 +64,12 @@ default: ## Show essential commands
 	@echo ""
 	@echo "Web to Markdown:"
 	@echo "  make web-to-md       Convert web pages to markdown"
+	@echo ""
+	@echo "Sync (Optional):"
+	@echo "  make sync-setup      Setup bidirectional sync"
+	@echo "  make sync-status     Show sync configuration"
+	@echo "  make sync-pull       Pull from remote (remote wins)"
+	@echo "  make sync-push       Push to remote"
 	@echo ""
 	@echo "Other:"
 	@echo "  make clean           Clean build artifacts"
@@ -145,6 +152,14 @@ help: ## Show ALL available commands
 	@echo "WEB TO MARKDOWN:"
 	@echo "  make web-to-md URL=<url> [URL2=<url>] [OUTPUT=<path>]  Convert web pages to markdown (saves to content_dirs[0]/sites/)"
 	@echo ""
+	@echo "SYNC (OPTIONAL):"
+	@echo "  make sync-setup      Setup bidirectional sync with remote server"
+	@echo "  make sync-status     Show sync configuration and status"
+	@echo "  make sync-pull       Pull from remote (remote wins on conflicts)"
+	@echo "  make sync-push       Push to remote server"
+	@echo "  make sync-pull-dry   Preview pull operation (no changes)"
+	@echo "  make sync-push-dry   Preview push operation (no changes)"
+	@echo ""
 	@echo "UTILITIES:"
 	@echo "  make clean           Clean build artifacts"
 	@echo "  make clean-wsl-files Clean WSL-related files"
@@ -155,7 +170,7 @@ help: ## Show ALL available commands
 	@echo ""
 
 verify-modules: ## Verify all modules loaded correctly
-	@echo "✓ Modular Makefile system loaded (9 modules)"
+	@echo "✓ Modular Makefile system loaded (10 modules)"
 	@echo ""
 	@echo "Modules:"
 	@echo "  • core.mk (foundation)"
@@ -166,13 +181,14 @@ verify-modules: ## Verify all modules loaded correctly
 	@echo "  • knowledge-synthesis.mk (pipeline & visualization)"
 	@echo "  • worktree.mk (git worktree utilities)"
 	@echo "  • content-generation.mk (blog/transcribe/illustrate/web-to-md)"
+	@echo "  • sync.mk (bidirectional sync with remote)"
 	@echo "  • utilities.mk (cleanup, misc)"
 	@echo ""
 	@echo "Run 'make help' to see all available targets"
 
-# Catch-all for worktree branch names
+# Catch-all for worktree branch names and dynamic targets
 %:
-	@if echo "$(MAKECMDGOALS)" | grep -qE '^(worktree|worktree-rm|worktree-rm-force|worktree-stash|worktree-unstash|worktree-adopt)\b'; then \
+	@if echo "$(MAKECMDGOALS)" | grep -qE '^(worktree|worktree-rm|worktree-rm-force|worktree-stash|worktree-unstash|worktree-adopt|sync-)\b'; then \
 		: ; \
 	else \
 		echo "Error: Unknown command '$@'. Run 'make help' to see available commands."; \

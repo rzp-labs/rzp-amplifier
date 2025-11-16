@@ -1,0 +1,82 @@
+# Rsync exclude patterns for bidirectional sync
+# This file lists patterns of files and directories to exclude from sync operations.
+# 
+# IMPORTANT: .gitignored files like .env, secrets, and configs ARE synced.
+# This file only excludes build artifacts, dependencies, and other generated files.
+
+# Build artifacts and dependencies
+node_modules/
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info/
+.cache/
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+.tox/
+.coverage
+htmlcov/
+dist/
+build/
+output/
+bin/
+obj/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+*Zone.Identifier
+*:Zone.Identifier
+*sec.endpointdlp
+*:sec.endpointdlp
+
+# IDE files (optional - uncomment if you don't want to sync these)
+# .vscode/
+# .idea/
+
+# Git directory (never sync this)
+.git/
+
+# SSH keys and config (security sensitive)
+.ssh/
+**/.ssh/
+
+# Logs and temporary files
+logs/
+*.log
+*.log.jsonl
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.claude/sessions/*
+
+# Databases (typically should not be synced)
+*.db
+*.sqlite
+*.sqlite3
+
+# Test runtime data
+.smoke_test_data/data
+
+# Amplifier local state (these are machine-specific)
+.amplifier/local
+.amplifier/transcripts
+
+# Working folders temporary files
+ai_working/tmp/
+
+# Data directory (uncomment if you don't want to sync data files)
+# .data/
+
+# Claude trace logs
+.claude-trace
