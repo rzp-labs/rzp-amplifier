@@ -1,4 +1,4 @@
-#!/workspaces/rzp-amplifier/.venv/bin/python3
+#!/usr/bin/env python3
 """
 Claude Code hook for Stop/SubagentStop events - minimal state cleanup only.
 Memory extraction is too resource-intensive for hooks and causes crashes.

@@ -121,32 +121,6 @@ def update_summary(log_dir: Path, log_entry: dict[str, Any]) -> None:
         json.dump(summary_to_save, f, indent=2)
 
 
-def create_agent_state_flag() -> None:
-    """Create state flag indicating an agent is active (disables boundary enforcement)."""
-    debug_log("DEBUG: create_agent_state_flag() called")
-    try:
-        project_root = Path(os.environ.get("CLAUDE_PROJECT_DIR", os.getcwd()))
-        debug_log(f"DEBUG: project_root = {project_root}")
-
-        state_dir = project_root / ".claude" / "state"
-        debug_log(f"DEBUG: state_dir = {state_dir}")
-
-        state_dir.mkdir(parents=True, exist_ok=True)
-        debug_log("DEBUG: state_dir created/exists")
-
-        flag_file = state_dir / "agent_active"
-        debug_log(f"DEBUG: Creating flag at {flag_file}")
-
-        flag_file.touch(exist_ok=True)
-        debug_log(f"DEBUG: Flag created successfully. Exists: {flag_file.exists()}")
-    except Exception as e:
-        # Don't fail on state flag errors
-        debug_log(f"ERROR: Failed to create agent state flag: {e}")
-        import traceback
-
-        debug_log(traceback.format_exc())
-
-
 def main() -> NoReturn:
     debug_log("=" * 80)
     debug_log("DEBUG: Hook starting")
@@ -167,10 +141,6 @@ def main() -> NoReturn:
             # Log the subagent usage
             log_subagent_usage(data)
             debug_log("DEBUG: Logged subagent usage")
-
-            # Create state flag to disable boundary enforcement for agent
-            create_agent_state_flag()
-            debug_log("DEBUG: Created state flag")
         except Exception as e:
             # Log error but don't block Claude's operation
             debug_log(f"ERROR: Failed to log subagent usage: {e}")

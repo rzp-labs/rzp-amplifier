@@ -1,5 +1,6 @@
-#!/workspaces/rzp-amplifier/.venv/bin/python3
-"""SessionStart hook to ensure repository setup before a Claude Code session."""
+#!/usr/bin/env python3
+"""
+SessionStart hook to ensure repository setup before a Claude Code session."""
 
 from __future__ import annotations
 

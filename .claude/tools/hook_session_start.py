@@ -1,4 +1,4 @@
-#!/workspaces/rzp-amplifier/.venv/bin/python3
+#!/usr/bin/env python3
 """
 Claude Code hook for session start - minimal wrapper for memory retrieval.
 Reads JSON from stdin, calls amplifier modules, writes JSON to stdout.
